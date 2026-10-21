@@ -1,0 +1,13 @@
+{
+  "appId": "com.bbmp.oneapp.demo",
+  "appName": "BBMP One App Demo",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true
+    }
+  }
+}

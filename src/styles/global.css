@@ -1,0 +1,244 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+@keyframes bbmp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bbmp-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.92);
+    opacity: 0.85;
+  }
+}
+
+/* Startup splash — one photorealistic auto on the road */
+@keyframes bbmp-splash-ken {
+  from {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
+  Frame timeline (6s) — translateX only (wheels stay on road):
+  0–22%  enter from left on asphalt
+  22–28% settle beside bags
+  28–58% parked — bags lift into hopper
+  58–100% drive off to the right
+*/
+@keyframes bbmp-auto-drive {
+  0% {
+    transform: translateX(-55vw);
+  }
+  22% {
+    transform: translateX(24vw);
+  }
+  28% {
+    transform: translateX(28vw);
+  }
+  28.01%,
+  58% {
+    transform: translateX(28vw);
+  }
+  70% {
+    transform: translateX(48vw);
+  }
+  100% {
+    transform: translateX(115vw);
+  }
+}
+
+/*
+  Bags rise from curb into hopper (left side of flipped auto).
+  Sync with park window 28–58%.
+*/
+@keyframes bbmp-bag-collect {
+  0%,
+  28% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  38% {
+    transform: translate(-32px, -52px) scale(0.88) rotate(-10deg);
+    opacity: 1;
+  }
+  48% {
+    transform: translate(-62px, -30px) scale(0.48) rotate(-6deg);
+    opacity: 0.6;
+  }
+  58%,
+  100% {
+    transform: translate(-88px, -8px) scale(0.1) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+@keyframes bbmp-brand-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bbmp-splash-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.bbmp-auto-drive {
+  animation: bbmp-auto-drive 6s linear both;
+}
+
+.bbmp-bag-collect {
+  animation: bbmp-bag-collect 6s linear both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bbmp-auto-drive,
+  .bbmp-bag-collect {
+    animation-duration: 0.01ms !important;
+  }
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Source Sans 3', 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  background: var(--bbmp-bg, #EAF0F4);
+  color: var(--bbmp-text, #1A2F40);
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+/* Shared page rhythm */
+.bbmp-page {
+  width: 100%;
+  max-width: var(--bbmp-content-max, 1280px);
+  margin-inline: auto;
+}
+
+.bbmp-stack > * + * {
+  margin-top: 16px;
+}
+
+.bbmp-stack-lg > * + * {
+  margin-top: 24px;
+}
+
+.bbmp-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.bbmp-filter-bar .MuiFormControl-root {
+  min-width: 148px;
+}
+
+@media (max-width: 600px) {
+  .bbmp-filter-bar .MuiFormControl-root {
+    min-width: 100%;
+  }
+}
+
+.bbmp-section-title {
+  margin: 0 0 12px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.bbmp-chart-box {
+  width: 100%;
+  height: 260px;
+  min-height: 200px;
+}
+
+.bbmp-chart-box--tall {
+  height: 300px;
+}
+
+@media (max-width: 600px) {
+  .bbmp-chart-box,
+  .bbmp-chart-box--tall {
+    height: 220px;
+    min-height: 200px;
+  }
+}
+
+.leaflet-container {
+  font-family: inherit;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-friendly {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Truncate helpers for dense tables */
+.bbmp-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
