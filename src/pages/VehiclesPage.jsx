@@ -14,6 +14,7 @@ import MapView from '../components/maps/MapView';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { VEHICLE_STATUSES } from '../constants';
 import { formatDateTime, formatTime } from '../utils/date';
 
@@ -21,18 +22,21 @@ export default function VehiclesPage() {
   const { data, api, loading } = useAppData();
   const { user } = useAuth();
   const { showToast } = useNotifications();
+  const { filterByWard, scopeWards, isScoped, scopeLabel } = useOpsScope();
   const [wardId, setWardId] = useState('');
   const [status, setStatus] = useState('');
   const [view, setView] = useState('map');
   const [selected, setSelected] = useState(null);
   const [focus, setFocus] = useState(null);
 
+  const scopedWards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
+
   const vehicles = useMemo(() => {
-    let list = data?.vehicles || [];
+    let list = filterByWard(data?.vehicles || []);
     if (wardId) list = list.filter((v) => v.wardId === wardId);
     if (status) list = list.filter((v) => v.status === status);
     return list;
-  }, [data, wardId, status]);
+  }, [data, wardId, status, filterByWard]);
 
   if (loading || !data) return <LoadingState />;
 
@@ -41,13 +45,13 @@ export default function VehiclesPage() {
   }));
 
   const columns = [
-    { header: 'Auto ID', accessor: 'autoId' },
-    { header: 'Driver', accessor: 'driverName' },
-    { header: 'Status', render: (r) => <StatusChip status={r.status} /> },
-    { header: 'Coverage', accessor: (r) => `${r.coveragePct}%` },
-    { header: 'Stops', accessor: (r) => `${r.completedStops}/${r.expectedStops}` },
-    { header: 'Speed', accessor: (r) => `${r.speed} km/h` },
-    { header: 'Updated', accessor: (r) => formatDateTime(r.lastUpdate) },
+    { id: 'auto', header: 'Auto ID', accessor: 'autoId' },
+    { id: 'driver', header: 'Driver', accessor: 'driverName' },
+    { id: 'status', header: 'Status', accessor: 'status', render: (r) => <StatusChip status={r.status} /> },
+    { id: 'coverage', header: 'Coverage', accessor: (r) => `${r.coveragePct}%`, hideOnMobile: true },
+    { id: 'stops', header: 'Stops', accessor: (r) => `${r.completedStops}/${r.expectedStops}`, hideOnMobile: true },
+    { id: 'speed', header: 'Speed', accessor: (r) => `${r.speed} km/h`, hideOnMobile: true },
+    { id: 'updated', header: 'Updated', accessor: (r) => formatDateTime(r.lastUpdate), hideOnMobile: true },
   ];
 
   return (
@@ -59,6 +63,7 @@ export default function VehiclesPage() {
       />
       <Alert severity="info" icon={false}>
         Markers use illustrative Bengaluru coordinates — not operational positions.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <FilterBar
@@ -73,7 +78,7 @@ export default function VehiclesPage() {
           <InputLabel>Ward</InputLabel>
           <Select label="Ward" value={wardId} onChange={(e) => setWardId(e.target.value)}>
             <MenuItem value="">All</MenuItem>
-            {data.wards.map((w) => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
+            {scopedWards.map((w) => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
           </Select>
         </FormControl>
         <FormControl size="small">
@@ -96,9 +101,9 @@ export default function VehiclesPage() {
         <DataTable columns={columns} rows={vehicles} onRowClick={setSelected} searchPlaceholder="Search auto / driver…" />
       )}
 
-      <Drawer anchor="right" open={Boolean(selected)} onClose={() => setSelected(null)} PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
+      <Drawer anchor="right" open={Boolean(selected)} onClose={() => setSelected(null)} PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, maxWidth: '100vw' } }}>
         {selected && (
-          <Box sx={{ p: 3 }}>
+          <Box sx={{ p: { xs: 2, sm: 3 }, pb: { xs: 'calc(24px + env(safe-area-inset-bottom))', sm: 3 } }}>
             <Typography variant="h6">{selected.displayName}</Typography>
             <Typography variant="body2" color="text.secondary">{selected.autoId} · {selected.driverName}</Typography>
             <StatusChip status={selected.status} />
@@ -117,9 +122,21 @@ export default function VehiclesPage() {
             ))}
             <Divider sx={{ my: 2 }} />
             <Typography variant="subtitle2" gutterBottom>Simulated dashcam snapshots</Typography>
-            <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {[1, 2, 3].map((n) => (
-                <Box key={n} sx={{ width: 90, height: 60, bgcolor: 'action.hover', borderRadius: 1, display: 'grid', placeItems: 'center' }}>
+                <Box
+                  key={n}
+                  sx={{
+                    flex: '1 1 84px',
+                    minWidth: 84,
+                    maxWidth: { xs: '100%', sm: 110 },
+                    height: 60,
+                    bgcolor: 'action.hover',
+                    borderRadius: 1,
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
                   <Typography variant="caption">Demo {n}</Typography>
                 </Box>
               ))}

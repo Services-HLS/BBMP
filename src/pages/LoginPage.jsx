@@ -148,7 +148,10 @@ export default function LoginPage() {
         height: { lg: '100vh' },
         maxHeight: { lg: '100vh' },
         display: 'grid',
-        gridTemplateColumns: { xs: '1fr', lg: '70% 30%' },
+        gridTemplateColumns: {
+          xs: '1fr',
+          lg: 'minmax(0, 1.35fr) minmax(360px, 420px)',
+        },
         bgcolor: 'background.default',
         overflow: { lg: 'hidden' },
       }}
@@ -157,14 +160,14 @@ export default function LoginPage() {
       <Box
         sx={{
           position: 'relative',
-          display: 'flex',
+          display: { xs: 'none', sm: 'flex' },
           flexDirection: 'column',
           height: { lg: '100%' },
-          minHeight: { xs: 0, lg: 0 },
+          minHeight: { sm: 180, md: 220, lg: 0 },
           bgcolor: '#10283C',
           color: '#fff',
-          px: { xs: 2, sm: 3, lg: 4 },
-          py: { xs: 1.75, sm: 2.25, lg: 2.75 },
+          px: { sm: 3, lg: 4 },
+          py: { sm: 2.25, lg: 2.75 },
           overflow: 'hidden',
         }}
       >
@@ -187,21 +190,20 @@ export default function LoginPage() {
             <AppLogo
               variant="dark"
               showEnv
-              markSize={76}
+              markSize={64}
               subtitle="Solid Waste Management & Civic Operations"
             />
 
             <Typography
               sx={{
-                mt: { xs: 2, md: 2.75, lg: 3.25 },
+                mt: { sm: 2, md: 2.75, lg: 3.25 },
                 fontFamily: '"Plus Jakarta Sans", "Source Sans 3", sans-serif',
-                fontSize: { xs: '1.05rem', sm: '1.3rem', md: '1.55rem', lg: '1.7rem' },
+                fontSize: { sm: '1.25rem', md: '1.55rem', lg: '1.7rem' },
                 fontWeight: 800,
                 letterSpacing: '-0.03em',
                 lineHeight: 1.22,
                 maxWidth: { lg: 580 },
                 color: '#FFFFFF',
-                display: { xs: 'none', sm: 'block' },
               }}
             >
               Municipal operations for Bengaluru’s solid waste & civic services
@@ -209,11 +211,11 @@ export default function LoginPage() {
             <Typography
               sx={{
                 mt: 1.1,
-                fontSize: { xs: '0.82rem', md: '0.9rem' },
+                fontSize: { sm: '0.82rem', md: '0.9rem' },
                 color: 'rgba(220,230,236,0.8)',
                 lineHeight: 1.55,
                 maxWidth: { lg: 560 },
-                display: { xs: 'none', sm: 'block' },
+                display: { sm: 'none', md: 'block' },
               }}
             >
               Built on ward SWM, grievance, and field-verification patterns from Karnataka civic platforms —
@@ -339,8 +341,16 @@ export default function LoginPage() {
           overflow: { lg: 'auto' },
           px: { xs: 2, sm: 2.5, lg: 2.5 },
           py: { xs: 2.25, lg: 3 },
+          pb: { xs: 'calc(24px + env(safe-area-inset-bottom))', lg: 3 },
         }}
       >
+        <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
+          <AppLogo
+            showEnv
+            markSize={52}
+            subtitle="Solid Waste Management"
+          />
+        </Box>
         <Stack
           direction="row"
           alignItems="center"
@@ -348,7 +358,7 @@ export default function LoginPage() {
           spacing={1}
           sx={{ mb: 1.75 }}
         >
-          <Typography variant="caption" color="text.secondary" fontWeight={600} noWrap>
+          <Typography variant="caption" color="text.secondary" fontWeight={600} noWrap sx={{ minWidth: 0 }}>
             Platform · Sign in
           </Typography>
           <Chip
@@ -507,11 +517,15 @@ export default function LoginPage() {
                   <Typography sx={{ mt: 0.2, fontSize: '0.68rem', color: 'text.secondary' }}>
                     {user.name}
                   </Typography>
-                  <Stack direction="row" spacing={1.5} sx={{ mt: 0.55 }}>
-                    <Typography sx={{ fontSize: '0.68rem', fontFamily: 'ui-monospace, monospace' }}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={{ xs: 0.15, sm: 1.5 }}
+                    sx={{ mt: 0.55 }}
+                  >
+                    <Typography sx={{ fontSize: '0.68rem', fontFamily: 'ui-monospace, monospace', wordBreak: 'break-all' }}>
                       {user.username}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.68rem', fontFamily: 'ui-monospace, monospace', color: 'text.secondary' }}>
+                    <Typography sx={{ fontSize: '0.68rem', fontFamily: 'ui-monospace, monospace', color: 'text.secondary', wordBreak: 'break-all' }}>
                       {user.password}
                     </Typography>
                   </Stack>

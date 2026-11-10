@@ -105,8 +105,17 @@ export default function PageHeader({
               alignItems: 'center',
               flexShrink: 0,
               width: { xs: '100%', sm: 'auto' },
-              '& > .MuiButton-root': {
+              minWidth: 0,
+              '& > .MuiButton-root, & > .MuiChip-root': {
                 flex: { xs: '1 1 auto', sm: '0 0 auto' },
+              },
+              '& > .MuiStack-root': {
+                width: { xs: '100%', sm: 'auto' },
+                flexWrap: 'wrap',
+                gap: 1,
+                '& .MuiButton-root': {
+                  flex: { xs: '1 1 auto', sm: '0 0 auto' },
+                },
               },
             }}
           >

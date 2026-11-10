@@ -101,15 +101,22 @@ export default function MyReportsPage() {
               }}
             >
               <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1.5}>
-                  <Box sx={{ minWidth: 0 }}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+                  spacing={1}
+                >
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
                     <Typography fontWeight={700}>{c.id}</Typography>
-                    <Typography variant="body2">{c.title}</Typography>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>{c.title}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {c.category} · {formatDateTime(c.createdAt)}
                     </Typography>
                   </Box>
-                  <StatusChip status={c.status} />
+                  <Box sx={{ alignSelf: { xs: 'flex-start', sm: 'flex-start' }, flexShrink: 0 }}>
+                    <StatusChip status={c.status} />
+                  </Box>
                 </Stack>
               </CardContent>
             </Card>
@@ -121,10 +128,10 @@ export default function MyReportsPage() {
         anchor="right"
         open={Boolean(selectedLive)}
         onClose={() => setSelected(null)}
-        PaperProps={{ sx: { width: { xs: '100%', sm: 400 } } }}
+        PaperProps={{ sx: { width: { xs: '100%', sm: 400 }, maxWidth: '100vw' } }}
       >
         {selectedLive && (
-          <Box sx={{ p: 2.5 }}>
+          <Box sx={{ p: { xs: 2, sm: 2.5 }, pb: { xs: 'calc(24px + env(safe-area-inset-bottom))', sm: 2.5 } }}>
             <Typography variant="h6">{selectedLive.id}</Typography>
             <Box sx={{ mt: 1 }}><StatusChip status={selectedLive.status} /></Box>
             <Typography variant="subtitle2" sx={{ mt: 2 }}>{selectedLive.title}</Typography>

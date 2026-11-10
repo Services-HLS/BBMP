@@ -8,8 +8,8 @@ export default function NotFoundPage() {
   const { role, isAuthenticated } = useAuth();
 
   return (
-    <Box sx={{ minHeight: '70vh', display: 'grid', placeItems: 'center', p: 3 }}>
-      <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', maxWidth: 400, width: '100%' }}>
+    <Box sx={{ minHeight: '70vh', display: 'grid', placeItems: 'center', p: { xs: 2, sm: 3 } }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 }, textAlign: 'center', maxWidth: 400, width: '100%' }}>
         <Typography
           sx={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: 'primary.main' }}
         >

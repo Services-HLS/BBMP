@@ -18,6 +18,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import useOpsScope from '../hooks/useOpsScope';
 import {
   COMPLAINT_CATEGORIES, COMPLAINT_PRIORITIES, COMPLAINT_STATUSES, APP_ENV_LABEL,
 } from '../constants';
@@ -77,6 +78,7 @@ export default function ComplaintsPage() {
   const { data, api, loading: storeLoading } = useAppData();
   const { user } = useAuth();
   const { showToast } = useNotifications();
+  const { scopeWards, isScoped, allowedWardIdList, scopeLabel } = useOpsScope();
 
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
@@ -105,7 +107,7 @@ export default function ComplaintsPage() {
   const [resolveNote, setResolveNote] = useState('');
   const [demoEvidence, setDemoEvidence] = useState(false);
 
-  const wards = data?.wards || [];
+  const wards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
   const supervisors = data?.supervisors || [];
   const actor = user?.name || 'Demo User';
 
@@ -115,6 +117,7 @@ export default function ComplaintsPage() {
       const list = await api.getComplaints({
         category: category || undefined,
         wardId: wardId || undefined,
+        wardIds: !wardId && isScoped ? allowedWardIdList : undefined,
       });
       setRows(list);
     } catch (err) {
@@ -122,7 +125,7 @@ export default function ComplaintsPage() {
     } finally {
       setLoading(false);
     }
-  }, [api, category, wardId, showToast]);
+  }, [api, category, wardId, showToast, isScoped, allowedWardIdList]);
 
   useEffect(() => {
     if (!storeLoading && data) loadComplaints();
@@ -345,27 +348,29 @@ export default function ComplaintsPage() {
   };
 
   const columns = useMemo(() => [
-    { id: 'id', header: 'ID', accessor: 'id' },
+    { id: 'id', header: 'ID', accessor: 'id', hideOnMobile: true },
     { id: 'title', header: 'Title', accessor: 'title' },
-    { id: 'category', header: 'Category', accessor: 'category' },
+    { id: 'category', header: 'Category', accessor: 'category', hideOnMobile: true },
     {
       id: 'ward',
       header: 'Ward',
       accessor: (r) => wardName(r.wardId),
       render: (r) => wardName(r.wardId),
+      hideOnMobile: true,
     },
     {
       id: 'priority',
       header: 'Priority',
       accessor: 'priority',
       render: (r) => <StatusChip status={r.priority} />,
+      hideOnMobile: true,
     },
     {
       id: 'status',
       header: 'Status',
       accessor: 'status',
       render: (r) => (
-        <Stack direction="row" spacing={0.5} alignItems="center">
+        <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ minWidth: 0 }}>
           <StatusChip status={r.status} />
           {isOverdue(r) && <Chip size="small" color="error" label="Overdue" />}
         </Stack>
@@ -376,6 +381,7 @@ export default function ComplaintsPage() {
       header: 'Created',
       accessor: (r) => formatDateTime(r.createdAt),
       render: (r) => formatDateTime(r.createdAt),
+      hideOnMobile: true,
     },
   ], [wards]);
 
@@ -420,6 +426,7 @@ export default function ComplaintsPage() {
 
       <Alert severity="info" icon={false}>
         {APP_ENV_LABEL}: actions update local sample data only. Pickup categories need demo evidence before resolve.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <Tabs
@@ -427,7 +434,8 @@ export default function ComplaintsPage() {
         onChange={(_, v) => setTab(v)}
         variant="scrollable"
         scrollButtons="auto"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
+        allowScrollButtonsMobile
+        sx={{ borderBottom: 1, borderColor: 'divider', maxWidth: '100%' }}
       >
         {TAB_DEFS.map((t) => (
           <Tab

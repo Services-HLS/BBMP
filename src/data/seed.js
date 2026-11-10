@@ -233,12 +233,15 @@ export function createSeedData() {
 
   const sweepingStretches = wards.flatMap((ward, wi) =>
     [0, 1].map((si) => {
+      const wardBlocks = blocks.filter((b) => b.wardId === ward.id);
+      const block = wardBlocks[si % Math.max(wardBlocks.length, 1)] || null;
       const planned = 2.5 + seeded(wi * 10 + si) * 4;
       const completed = planned * (0.5 + seeded(wi + si) * 0.5);
       return {
         id: `sweep-${ward.number}-${si + 1}`,
         roadName: `${ward.name.split('—')[1]?.trim() || ward.name} Stretch ${si + 1}`,
         wardId: ward.id,
+        blockId: block?.id || null,
         team: `PK Team ${wi + 1}${String.fromCharCode(65 + si)}`,
         supervisorId: supervisors.find((s) => s.wardIds.includes(ward.id))?.id,
         plannedKm: Number(planned.toFixed(2)),
@@ -250,9 +253,13 @@ export function createSeedData() {
     })
   );
 
+  const houseFor = (blockId, index = 1) => households.find((h) => h.id === `hh-${blockId}-${index}`) || null;
+
   const blackSpots = [
     {
       id: 'bs-1', category: 'Illegal Dumping', severity: 'High', wardId: 'ward-112',
+      blockId: 'block-112-A', householdId: houseFor('block-112-A', 1)?.id || null,
+      doorNo: houseFor('block-112-A', 1)?.doorNo || '10',
       location: '100 Feet Road junction', lat: 12.9789, lng: 77.6415,
       firstReported: daysAgoISO(12), daysUnresolved: 12, assignedTeam: 'PK Team 1A',
       status: 'Open', previousReports: 3, evidencePlaceholders: ['dump-1'], history: [
@@ -261,6 +268,8 @@ export function createSeedData() {
     },
     {
       id: 'bs-2', category: 'Overflowing Bin', severity: 'Medium', wardId: 'ward-113',
+      blockId: 'block-113-A', householdId: houseFor('block-113-A', 2)?.id || null,
+      doorNo: houseFor('block-113-A', 2)?.doorNo || '11',
       location: 'Domlur Bus Stop', lat: 12.9615, lng: 77.6390,
       firstReported: daysAgoISO(5), daysUnresolved: 5, assignedTeam: 'PK Team 2A',
       status: 'In Progress Cleanup', previousReports: 1, evidencePlaceholders: ['bin-1'], history: [
@@ -270,6 +279,8 @@ export function createSeedData() {
     },
     {
       id: 'bs-3', category: 'Construction Debris', severity: 'High', wardId: 'ward-120',
+      blockId: 'block-120-A', householdId: houseFor('block-120-A', 3)?.id || null,
+      doorNo: houseFor('block-120-A', 3)?.doorNo || '12',
       location: '5th Block Koramangala', lat: 12.9340, lng: 77.6250,
       firstReported: daysAgoISO(20), daysUnresolved: 20, assignedTeam: 'PK Team 3A',
       status: 'Open', previousReports: 5, evidencePlaceholders: ['debris-1'], history: [
@@ -278,6 +289,8 @@ export function createSeedData() {
     },
     {
       id: 'bs-4', category: 'Recurring Dump Site', severity: 'Critical', wardId: 'ward-145',
+      blockId: 'block-145-A', householdId: houseFor('block-145-A', 1)?.id || null,
+      doorNo: houseFor('block-145-A', 1)?.doorNo || '10',
       location: 'Near Jayanagar 4th Block park', lat: 12.9315, lng: 77.5845,
       firstReported: daysAgoISO(45), daysUnresolved: 45, assignedTeam: 'PK Team 3B',
       status: 'Open', previousReports: 8, evidencePlaceholders: ['recur-1'], history: [
@@ -286,6 +299,8 @@ export function createSeedData() {
     },
     {
       id: 'bs-5', category: 'Open Drain Waste', severity: 'Medium', wardId: 'ward-65',
+      blockId: 'block-65-A', householdId: houseFor('block-65-A', 4)?.id || null,
+      doorNo: houseFor('block-65-A', 4)?.doorNo || '13',
       location: 'Rajajinagar industrial area', lat: 12.9920, lng: 77.5530,
       firstReported: daysAgoISO(3), daysUnresolved: 0, assignedTeam: 'PK Team 4A',
       status: 'Cleared', previousReports: 2, evidencePlaceholders: ['drain-1', 'drain-cleared'], history: [
@@ -495,43 +510,161 @@ export function createSeedData() {
     }
   });
 
+  const pendingDwcVehicle = vehicles.find((v) => v.status === 'Centre Visit Pending') || vehicles[0];
+
+  /* Dummy notifications scoped by login:
+   * - citizen (Priya): personal pickup / report alerts
+   * - supervisor (Ramesh): wards 112–114 ops alerts
+   * - admin (Ananya): all ops + city-wide digests
+   */
   const notifications = [
+    // —— Shared ops (admin + supervisor ward scope) ——
     {
       id: 'notif-1', category: 'Pending Dry Waste Centre Visit', title: 'DWC visit pending',
-      message: `${vehicles.find((v) => v.status === 'Centre Visit Pending')?.displayName || 'Auto'} has pending dry-waste-centre visit.`,
+      message: `${pendingDwcVehicle?.displayName || 'Auto'} has pending dry-waste-centre visit.`,
       priority: 'High', createdAt: `${daysAgoISO(0)}T09:00:00.000Z`, read: false,
-      relatedType: 'vehicle', relatedId: vehicles.find((v) => v.status === 'Centre Visit Pending')?.id,
+      relatedType: 'vehicle', relatedId: pendingDwcVehicle?.id,
       link: '/vehicles',
+      roles: ['admin', 'supervisor'],
+      wardIds: pendingDwcVehicle?.wardId ? [pendingDwcVehicle.wardId] : ['ward-112'],
     },
     {
       id: 'notif-2', category: 'Overdue Complaint', title: 'Complaint approaching SLA',
-      message: 'CMP-100003 requires verification — SLA at risk.',
+      message: 'CMP-100003 requires verification — SLA at risk in Ward 112.',
       priority: 'Critical', createdAt: `${daysAgoISO(0)}T08:30:00.000Z`, read: false,
       relatedType: 'complaint', relatedId: 'CMP-100003', link: '/complaints',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-112'],
     },
     {
       id: 'notif-3', category: 'Speed Violation', title: 'Speed alert confirmed',
-      message: 'AIE-10002 speeding event confirmed for review.',
+      message: 'AIE-10002 speeding event confirmed for review (Ward 113).',
       priority: 'Medium', createdAt: `${daysAgoISO(0)}T08:05:00.000Z`, read: false,
       relatedType: 'aiEvent', relatedId: 'AIE-10002', link: '/dashcam',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-113'],
     },
     {
       id: 'notif-4', category: 'Low Household Coverage', title: 'Coverage below 90%',
-      message: 'One or more autos in Ward 112 reporting coverage below target.',
-      priority: 'High', createdAt: `${daysAgoISO(0)}T10:00:00.000Z`, read: true,
+      message: 'Ward 112 autos reporting coverage below target this morning.',
+      priority: 'High', createdAt: `${daysAgoISO(0)}T10:00:00.000Z`, read: false,
       relatedType: 'ward', relatedId: 'ward-112', link: '/coverage',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-112'],
     },
     {
       id: 'notif-5', category: 'Resolved Complaint', title: 'Complaint resolved',
-      message: 'CMP-100005 has been marked resolved.',
+      message: 'CMP-100005 (missed dry waste) marked resolved in Ward 112.',
       priority: 'Low', createdAt: `${daysAgoISO(1)}T09:30:00.000Z`, read: true,
       relatedType: 'complaint', relatedId: 'CMP-100005', link: '/complaints',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-112'],
     },
     {
       id: 'notif-6', category: 'New Assignment', title: 'New complaint assigned',
-      message: 'CMP-100001 assigned to JHI Ramesh Kumar.',
+      message: 'CMP-100001 assigned to JHI Ramesh Kumar — Ward 112.',
       priority: 'Medium', createdAt: `${daysAgoISO(0)}T08:20:00.000Z`, read: false,
       relatedType: 'complaint', relatedId: 'CMP-100001', link: '/complaints',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-112'],
+    },
+    {
+      id: 'notif-11', category: 'Route Deviation', title: 'Route deviation in Domlur',
+      message: 'Auto on Route 113A left planned polyline for 8 minutes.',
+      priority: 'Medium', createdAt: `${daysAgoISO(0)}T09:40:00.000Z`, read: false,
+      relatedType: 'aiEvent', relatedId: 'AIE-10005', link: '/dashcam',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-113'],
+    },
+    {
+      id: 'notif-12', category: 'Excessive Stoppage', title: 'Long stoppage — HAL Airport',
+      message: 'Collection auto idle >15 min near Ward 114 muster point.',
+      priority: 'High', createdAt: `${daysAgoISO(0)}T10:25:00.000Z`, read: false,
+      relatedType: 'vehicle', relatedId: vehicles.find((v) => v.wardId === 'ward-114')?.id || vehicles[1]?.id,
+      link: '/vehicles',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-114'],
+    },
+    {
+      id: 'notif-13', category: 'Overdue Complaint', title: 'Black spot follow-up due',
+      message: 'Illegal dumping spot in Ward 112 still open — schedule sweep check.',
+      priority: 'High', createdAt: `${daysAgoISO(0)}T11:15:00.000Z`, read: true,
+      relatedType: 'complaint', relatedId: 'CMP-100003', link: '/sweeping',
+      roles: ['admin', 'supervisor'],
+      wardIds: ['ward-112'],
+    },
+
+    // —— Admin-only city-wide digests ——
+    {
+      id: 'notif-10', category: 'System', title: 'City-wide SLA digest',
+      message: '3 complaints outside East demo wards need admin review today.',
+      priority: 'Medium', createdAt: `${daysAgoISO(0)}T11:00:00.000Z`, read: false,
+      relatedType: 'system', relatedId: null, link: '/complaints',
+      roles: ['admin'],
+    },
+    {
+      id: 'notif-14', category: 'System', title: 'Monthly scorecard draft ready',
+      message: 'March demo scorecards are ready for admin sign-off.',
+      priority: 'Low', createdAt: `${daysAgoISO(0)}T12:10:00.000Z`, read: false,
+      relatedType: 'system', relatedId: null, link: '/scorecards',
+      roles: ['admin'],
+    },
+    {
+      id: 'notif-15', category: 'System', title: 'Impact dashboard refresh',
+      message: 'Illustrative CO₂ and diversion metrics updated for leadership view.',
+      priority: 'Low', createdAt: `${daysAgoISO(1)}T08:00:00.000Z`, read: true,
+      relatedType: 'system', relatedId: null, link: '/impact',
+      roles: ['admin'],
+    },
+
+    // —— Citizen (Priya) ——
+    {
+      id: 'notif-7', category: 'Complaint Update', title: 'Your report was resolved',
+      message: 'CMP-100005 is now Resolved. Open My Reports for the timeline.',
+      priority: 'Medium', createdAt: `${daysAgoISO(1)}T09:35:00.000Z`, read: false,
+      relatedType: 'complaint', relatedId: 'CMP-100005', link: '/citizen/reports',
+      roles: ['citizen'],
+      userIds: ['user-citizen-1'],
+    },
+    {
+      id: 'notif-8', category: 'Arrival Alert', title: 'Auto is nearby',
+      message: 'Your collection auto is about 5 minutes away from 100 Feet Road.',
+      priority: 'High', createdAt: `${daysAgoISO(0)}T07:45:00.000Z`, read: false,
+      relatedType: 'vehicle', relatedId: vehicles[0]?.id, link: '/citizen/track',
+      roles: ['citizen'],
+      userIds: ['user-citizen-1'],
+    },
+    {
+      id: 'notif-9', category: 'Pickup Reminder', title: 'Today’s doorstep collection',
+      message: 'Keep wet and dry waste ready before the auto arrives.',
+      priority: 'Low', createdAt: `${daysAgoISO(0)}T06:30:00.000Z`, read: false,
+      relatedType: 'system', relatedId: null, link: '/citizen/pickup',
+      roles: ['citizen'],
+      userIds: ['user-citizen-1'],
+    },
+    {
+      id: 'notif-16', category: 'Complaint Update', title: 'New report received',
+      message: 'CMP-100001 (Door 42 not collected) was submitted successfully.',
+      priority: 'Low', createdAt: `${daysAgoISO(2)}T10:05:00.000Z`, read: true,
+      relatedType: 'complaint', relatedId: 'CMP-100001', link: '/citizen/reports',
+      roles: ['citizen'],
+      userIds: ['user-citizen-1'],
+    },
+    {
+      id: 'notif-17', category: 'Pickup Reminder', title: 'Mark yesterday’s pickup',
+      message: 'Add a reason on the Collection Calendar if pickup was missed.',
+      priority: 'Medium', createdAt: `${daysAgoISO(1)}T18:00:00.000Z`, read: false,
+      relatedType: 'system', relatedId: null, link: '/citizen/calendar',
+      roles: ['citizen'],
+      userIds: ['user-citizen-1'],
+    },
+    {
+      id: 'notif-18', category: 'Arrival Alert', title: 'Dry waste day tomorrow',
+      message: 'Demo reminder: dry waste collection window is scheduled for tomorrow morning.',
+      priority: 'Low', createdAt: `${daysAgoISO(0)}T19:00:00.000Z`, read: true,
+      relatedType: 'system', relatedId: null, link: '/citizen/calendar',
+      roles: ['citizen'],
+      userIds: ['user-citizen-1'],
     },
   ];
 

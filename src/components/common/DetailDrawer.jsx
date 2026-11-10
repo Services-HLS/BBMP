@@ -56,7 +56,14 @@ export default function DetailDrawer({
           </IconButton>
         </Stack>
       </Box>
-      <Box sx={{ p: 2.5, pb: 4 }}>{children}</Box>
+      <Box
+        sx={{
+          p: { xs: 2, sm: 2.5 },
+          pb: { xs: 'calc(24px + env(safe-area-inset-bottom))', sm: 4 },
+        }}
+      >
+        {children}
+      </Box>
     </Drawer>
   );
 }

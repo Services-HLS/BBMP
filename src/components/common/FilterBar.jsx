@@ -6,13 +6,13 @@ import { Box, Stack } from '@mui/material';
 export default function FilterBar({ children, endActions, sx, className }) {
   return (
     <Stack
-      direction={{ xs: 'column', md: 'row' }}
+      direction={{ xs: 'column', sm: 'row' }}
       spacing={1.5}
-      alignItems={{ xs: 'stretch', md: 'center' }}
+      alignItems={{ xs: 'stretch', sm: 'center' }}
       justifyContent="space-between"
       className={['bbmp-filter-bar', className].filter(Boolean).join(' ')}
       sx={{
-        p: 1.5,
+        p: { xs: 1.25, sm: 1.5 },
         borderRadius: 2.5,
         border: '1px solid',
         borderColor: 'divider',
@@ -29,8 +29,9 @@ export default function FilterBar({ children, endActions, sx, className }) {
           alignItems: 'center',
           flex: 1,
           minWidth: 0,
-          '& > .MuiFormControl-root': { minWidth: { xs: '100%', sm: 148 }, flex: { sm: '0 1 180px' } },
-          '& > .MuiTextField-root': { minWidth: { xs: '100%', sm: 180 }, flex: { sm: '1 1 220px' } },
+          width: { xs: '100%', sm: 'auto' },
+          '& > .MuiFormControl-root': { minWidth: { xs: '100%', sm: 132 }, flex: { sm: '0 1 160px' } },
+          '& > .MuiTextField-root': { minWidth: { xs: '100%', sm: 160 }, flex: { sm: '1 1 200px' } },
         }}
       >
         {children}

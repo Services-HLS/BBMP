@@ -8,12 +8,14 @@ import DataTable from '../components/common/DataTable';
 import LoadingState from '../components/common/LoadingState';
 import KpiCard from '../components/common/KpiCard';
 import { useAppData } from '../context/AppDataContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { formatDateTime } from '../utils/date';
 
 export default function FeedbackPage() {
   const { data, loading } = useAppData();
+  const { filterByWard, isScoped, scopeLabel } = useOpsScope();
 
-  const feedback = data?.feedback || [];
+  const feedback = useMemo(() => filterByWard(data?.feedback || []), [data?.feedback, filterByWard]);
   const avg = feedback.length
     ? Math.round((feedback.reduce((s, f) => s + (f.rating || 0), 0) / feedback.length) * 10) / 10
     : 0;
@@ -37,6 +39,7 @@ export default function FeedbackPage() {
       <PageHeader title="Citizen Feedback" subtitle="Service quality and segregation feedback from the citizen portal." />
       <Alert severity="info" icon={false}>
         Feedback is stored in local demo storage and linked to fictional citizen IDs.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <Grid container spacing={1.5}>
@@ -57,13 +60,23 @@ export default function FeedbackPage() {
 
       <DataTable
         columns={[
-          { header: 'Date', accessor: 'date' },
-          { header: 'Citizen', accessor: 'citizenId' },
-          { header: 'Collected', accessor: (r) => (r.collected ? 'Yes' : 'No') },
-          { header: 'Rating', accessor: 'rating' },
-          { header: 'Segregation', accessor: 'segregationFeedback' },
-          { header: 'Comment', accessor: 'comment' },
-          { header: 'Submitted', accessor: (r) => formatDateTime(r.createdAt) },
+          { id: 'date', header: 'Date', accessor: 'date' },
+          { id: 'citizen', header: 'Citizen', accessor: 'citizenId', hideOnMobile: true },
+          { id: 'collected', header: 'Collected', accessor: (r) => (r.collected ? 'Yes' : 'No') },
+          { id: 'rating', header: 'Rating', accessor: 'rating' },
+          { id: 'seg', header: 'Segregation', accessor: 'segregationFeedback', hideOnMobile: true },
+          {
+            id: 'comment',
+            header: 'Comment',
+            accessor: 'comment',
+            hideOnMobile: true,
+            render: (r) => (
+              <span className="bbmp-truncate" title={r.comment || ''} style={{ display: 'inline-block', maxWidth: 220 }}>
+                {r.comment || '—'}
+              </span>
+            ),
+          },
+          { id: 'submitted', header: 'Submitted', accessor: (r) => formatDateTime(r.createdAt), hideOnMobile: true },
         ]}
         rows={feedback}
       />

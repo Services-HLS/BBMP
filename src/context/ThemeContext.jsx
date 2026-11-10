@@ -15,6 +15,10 @@ export function AppThemeProvider({ children }) {
     if (prefs.language) setLanguageState(prefs.language);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = language === 'kn' ? 'kn' : 'en';
+  }, [language]);
+
   const toggleTheme = useCallback(() => {
     setMode((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';

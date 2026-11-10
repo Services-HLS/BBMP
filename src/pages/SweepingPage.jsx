@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider,
   Drawer, FormControl, Grid, IconButton, InputLabel, List, ListItem, ListItemText,
-  MenuItem, Select, Stack, Tab, Tabs, TextField, Typography, Chip,
+  MenuItem, Select, Stack, TextField, Typography, Chip,
 } from '@mui/material';
 import { Plus, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
@@ -16,6 +16,7 @@ import EmptyState from '../components/common/EmptyState';
 import { useAppData } from '../context/AppDataContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { BLACK_SPOT_CATEGORIES, PROPOSAL_SCALE } from '../constants';
 import { formatDate, formatDateTime } from '../utils/date';
 
@@ -25,6 +26,8 @@ const emptyForm = {
   category: 'Illegal Dumping',
   severity: 'Medium',
   wardId: '',
+  blockId: '',
+  householdId: '',
   location: '',
   lat: '12.9716',
   lng: '77.5946',
@@ -36,10 +39,13 @@ export default function SweepingPage() {
   const { data, api, loading } = useAppData();
   const { showToast } = useNotifications();
   const { user } = useAuth();
+  const { filterByWard, scopeWards, scopeBlocks, isScoped, scopeLabel } = useOpsScope();
   const actor = user?.name || 'Demo User';
 
-  const [tab, setTab] = useState(0);
+  const [view, setView] = useState('blackspots');
   const [wardId, setWardId] = useState('');
+  const [blockId, setBlockId] = useState('');
+  const [householdId, setHouseholdId] = useState('');
   const [spotStatus, setSpotStatus] = useState('');
   const [selectedSpotId, setSelectedSpotId] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -48,62 +54,116 @@ export default function SweepingPage() {
   const [evidenceNote, setEvidenceNote] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const wards = data?.wards || [];
-  const stretches = data?.sweepingStretches || [];
-  const blackSpots = data?.blackSpots || [];
-  const complaints = data?.complaints || [];
+  const wards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
+  const blocks = useMemo(() => scopeBlocks(data?.blocks || []), [data?.blocks, scopeBlocks]);
+  const households = useMemo(() => filterByWard(data?.households || []), [data?.households, filterByWard]);
+  const stretches = useMemo(() => filterByWard(data?.sweepingStretches || []), [data?.sweepingStretches, filterByWard]);
+  const blackSpots = useMemo(() => filterByWard(data?.blackSpots || []), [data?.blackSpots, filterByWard]);
+  const complaints = useMemo(() => filterByWard(data?.complaints || []), [data?.complaints, filterByWard]);
   const supervisors = data?.supervisors || [];
 
   const wardName = (id) => wards.find((w) => w.id === id)?.name || id || '—';
+  const blockName = (id) => {
+    const b = blocks.find((x) => x.id === id);
+    return b ? `${b.code || b.name}` : (id || '—');
+  };
+  const houseLabel = (hh) => (hh ? `Door ${hh.doorNo} · ${hh.street}` : '—');
+
+  const filterBlocks = useMemo(() => {
+    if (!wardId) return blocks;
+    return blocks.filter((b) => b.wardId === wardId);
+  }, [blocks, wardId]);
+
+  const filterHouses = useMemo(() => {
+    let list = households;
+    if (blockId) list = list.filter((h) => h.blockId === blockId);
+    else if (wardId) list = list.filter((h) => h.wardId === wardId);
+    return list;
+  }, [households, wardId, blockId]);
+
+  const formBlocks = useMemo(() => {
+    if (!form.wardId) return [];
+    return blocks.filter((b) => b.wardId === form.wardId);
+  }, [blocks, form.wardId]);
+
+  const formHouses = useMemo(() => {
+    if (!form.blockId) return [];
+    return households.filter((h) => h.blockId === form.blockId);
+  }, [households, form.blockId]);
 
   const filteredStretches = useMemo(() => {
-    if (!wardId) return stretches;
-    return stretches.filter((s) => s.wardId === wardId);
-  }, [stretches, wardId]);
+    let list = [...stretches];
+    if (wardId) list = list.filter((s) => s.wardId === wardId);
+    if (blockId) list = list.filter((s) => s.blockId === blockId);
+    if (householdId) {
+      const hh = households.find((h) => h.id === householdId);
+      if (hh?.blockId) list = list.filter((s) => s.blockId === hh.blockId);
+    }
+    return list;
+  }, [stretches, wardId, blockId, householdId, households]);
 
   const filteredSpots = useMemo(() => {
     let list = [...blackSpots];
     if (wardId) list = list.filter((b) => b.wardId === wardId);
+    if (blockId) list = list.filter((b) => b.blockId === blockId);
+    if (householdId) list = list.filter((b) => b.householdId === householdId);
     if (spotStatus) list = list.filter((b) => b.status === spotStatus);
     return list;
-  }, [blackSpots, wardId, spotStatus]);
+  }, [blackSpots, wardId, blockId, householdId, spotStatus]);
 
   const civicEvents = useMemo(() => {
     let list = complaints.filter((c) => CIVIC_CATEGORIES.includes(c.category));
     if (wardId) list = list.filter((c) => c.wardId === wardId);
+    if (blockId) list = list.filter((c) => c.blockId === blockId);
+    if (householdId) {
+      const hh = households.find((h) => h.id === householdId);
+      if (hh?.blockId) list = list.filter((c) => c.blockId === hh.blockId);
+    }
     return list;
-  }, [complaints, wardId]);
+  }, [complaints, wardId, blockId, householdId, households]);
 
   const selected = blackSpots.find((b) => b.id === selectedSpotId) || null;
 
   const stretchColumns = [
     { id: 'road', header: 'Road / stretch', accessor: 'roadName' },
-    { id: 'ward', header: 'Ward', render: (r) => wardName(r.wardId) },
-    { id: 'team', header: 'Team', accessor: 'team' },
-    { id: 'km', header: 'Km', render: (r) => `${r.completedKm} / ${r.plannedKm}` },
-    { id: 'pct', header: 'Completion', render: (r) => `${r.completionPct}%` },
-    { id: 'status', header: 'Status', render: (r) => <StatusChip status={r.status} /> },
-    { id: 'verified', header: 'Last verification', render: (r) => formatDate(r.lastVerification) },
+    { id: 'ward', header: 'Ward', accessor: (r) => wardName(r.wardId), render: (r) => wardName(r.wardId), hideOnMobile: true },
+    { id: 'block', header: 'Block', accessor: (r) => blockName(r.blockId), render: (r) => blockName(r.blockId) },
+    { id: 'team', header: 'Team', accessor: 'team', hideOnMobile: true },
+    { id: 'km', header: 'Km', accessor: (r) => `${r.completedKm} / ${r.plannedKm}`, render: (r) => `${r.completedKm} / ${r.plannedKm}`, hideOnMobile: true },
+    { id: 'pct', header: 'Completion', accessor: (r) => `${r.completionPct}%`, render: (r) => `${r.completionPct}%` },
+    { id: 'status', header: 'Status', accessor: 'status', render: (r) => <StatusChip status={r.status} /> },
+    { id: 'verified', header: 'Last verification', accessor: (r) => formatDate(r.lastVerification), render: (r) => formatDate(r.lastVerification), hideOnMobile: true },
   ];
 
   const spotColumns = [
     { id: 'loc', header: 'Location', accessor: 'location' },
-    { id: 'cat', header: 'Category', accessor: 'category' },
-    { id: 'sev', header: 'Severity', accessor: 'severity' },
-    { id: 'ward', header: 'Ward', render: (r) => wardName(r.wardId) },
-    { id: 'days', header: 'Days open', accessor: 'daysUnresolved' },
-    { id: 'team', header: 'Team', accessor: (r) => r.assignedTeam || '—' },
-    { id: 'status', header: 'Status', render: (r) => <StatusChip status={r.status} /> },
+    { id: 'block', header: 'Block', accessor: (r) => blockName(r.blockId), render: (r) => blockName(r.blockId) },
+    {
+      id: 'house',
+      header: 'House',
+      accessor: (r) => r.doorNo || households.find((h) => h.id === r.householdId)?.doorNo || '—',
+      render: (r) => {
+        const hh = households.find((h) => h.id === r.householdId);
+        return hh ? `Door ${hh.doorNo}` : (r.doorNo ? `Door ${r.doorNo}` : '—');
+      },
+    },
+    { id: 'cat', header: 'Category', accessor: 'category', hideOnMobile: true },
+    { id: 'sev', header: 'Severity', accessor: 'severity', hideOnMobile: true },
+    { id: 'ward', header: 'Ward', accessor: (r) => wardName(r.wardId), render: (r) => wardName(r.wardId), hideOnMobile: true },
+    { id: 'days', header: 'Days open', accessor: 'daysUnresolved', hideOnMobile: true },
+    { id: 'team', header: 'Team', accessor: (r) => r.assignedTeam || '—', hideOnMobile: true },
+    { id: 'status', header: 'Status', accessor: 'status', render: (r) => <StatusChip status={r.status} /> },
   ];
 
   const civicColumns = [
-    { id: 'id', header: 'ID', accessor: 'id' },
-    { id: 'cat', header: 'Category', accessor: 'category' },
+    { id: 'id', header: 'ID', accessor: 'id', hideOnMobile: true },
+    { id: 'cat', header: 'Category', accessor: 'category', hideOnMobile: true },
     { id: 'title', header: 'Title', accessor: 'title' },
-    { id: 'ward', header: 'Ward', render: (r) => wardName(r.wardId) },
-    { id: 'priority', header: 'Priority', accessor: 'priority' },
-    { id: 'status', header: 'Status', render: (r) => <StatusChip status={r.status} /> },
-    { id: 'created', header: 'Created', render: (r) => formatDateTime(r.createdAt) },
+    { id: 'ward', header: 'Ward', accessor: (r) => wardName(r.wardId), render: (r) => wardName(r.wardId), hideOnMobile: true },
+    { id: 'block', header: 'Block', accessor: (r) => blockName(r.blockId), render: (r) => blockName(r.blockId) },
+    { id: 'priority', header: 'Priority', accessor: 'priority', hideOnMobile: true },
+    { id: 'status', header: 'Status', accessor: 'status', render: (r) => <StatusChip status={r.status} /> },
+    { id: 'created', header: 'Created', accessor: (r) => formatDateTime(r.createdAt), render: (r) => formatDateTime(r.createdAt), hideOnMobile: true },
   ];
 
   const handleCreate = async () => {
@@ -114,22 +174,26 @@ export default function SweepingPage() {
     setBusy(true);
     try {
       const ward = wards.find((w) => w.id === form.wardId);
+      const hh = households.find((h) => h.id === form.householdId);
       const spot = await api.createBlackSpot({
         category: form.category,
         severity: form.severity,
         wardId: form.wardId,
+        blockId: form.blockId || hh?.blockId || null,
+        householdId: form.householdId || null,
+        doorNo: hh?.doorNo || null,
         location: form.location,
-        lat: Number(form.lat) || ward?.lat || null,
-        lng: Number(form.lng) || ward?.lng || null,
+        lat: Number(form.lat) || hh?.lat || ward?.lat || null,
+        lng: Number(form.lng) || hh?.lng || ward?.lng || null,
         assignedTeam: form.assignedTeam || null,
         note: form.note,
         evidencePlaceholders: [],
       }, actor);
       showToast(`Black spot ${spot.id} created`);
       setCreateOpen(false);
-      setForm({ ...emptyForm, wardId: form.wardId });
+      setForm({ ...emptyForm, wardId: form.wardId, blockId: form.blockId });
       setSelectedSpotId(spot.id);
-      setTab(1);
+      setView('blackspots');
     } catch (err) {
       showToast(err.message || 'Create failed', 'error');
     } finally {
@@ -164,7 +228,7 @@ export default function SweepingPage() {
     <PageContainer>
       <PageHeader
         title="Sweeping & Black Spots"
-        subtitle={`Road sweeping stretches, black-spot register, and civic pothole/debris events. Proposal reference ${PROPOSAL_SCALE.sweepingKm.toLocaleString()} km.`}
+        subtitle={`Road sweeping stretches, top black spots, and civic pothole/debris events. Proposal reference ${PROPOSAL_SCALE.sweepingKm.toLocaleString()} km.`}
         breadcrumbs={[{ label: 'Civic Issues', to: '/complaints' }, { label: 'Sweeping & Black Spots' }]}
         actions={(
           <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => setCreateOpen(true)}>
@@ -174,7 +238,8 @@ export default function SweepingPage() {
       />
 
       <Alert severity="info" icon={false}>
-        Demo register — {data.sweepingStretches.length} stretches loaded; clearance and evidence are simulated.
+        Demo register — {stretches.length} stretches in view; clearance and evidence are simulated.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <Grid container spacing={1.5}>
@@ -193,16 +258,76 @@ export default function SweepingPage() {
       </Grid>
 
       <FilterBar>
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 240 } }}>
+          <InputLabel>View</InputLabel>
+          <Select
+            label="View"
+            value={view}
+            onChange={(e) => setView(e.target.value)}
+          >
+            <MenuItem value="blackspots">Top black spots</MenuItem>
+            <MenuItem value="stretches">Sweeping stretches</MenuItem>
+            <MenuItem value="civic">Civic events (pothole / debris)</MenuItem>
+          </Select>
+        </FormControl>
         <FormControl size="small">
           <InputLabel>Ward</InputLabel>
-          <Select label="Ward" value={wardId} onChange={(e) => setWardId(e.target.value)}>
+          <Select
+            label="Ward"
+            value={wardId}
+            onChange={(e) => {
+              setWardId(e.target.value);
+              setBlockId('');
+              setHouseholdId('');
+            }}
+          >
             <MenuItem value="">All wards</MenuItem>
             {wards.map((w) => (
               <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>
             ))}
           </Select>
         </FormControl>
-        {tab === 1 && (
+        <FormControl size="small">
+          <InputLabel>Block</InputLabel>
+          <Select
+            label="Block"
+            value={blockId}
+            onChange={(e) => {
+              setBlockId(e.target.value);
+              setHouseholdId('');
+            }}
+          >
+            <MenuItem value="">All blocks</MenuItem>
+            {filterBlocks.map((b) => (
+              <MenuItem key={b.id} value={b.id}>{b.code} · {wardName(b.wardId)}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl size="small">
+          <InputLabel>House</InputLabel>
+          <Select
+            label="House"
+            value={householdId}
+            onChange={(e) => {
+              const next = e.target.value;
+              setHouseholdId(next);
+              if (next) {
+                const hh = households.find((h) => h.id === next);
+                if (hh) {
+                  if (!wardId) setWardId(hh.wardId);
+                  if (!blockId) setBlockId(hh.blockId);
+                }
+              }
+            }}
+            disabled={filterHouses.length === 0}
+          >
+            <MenuItem value="">All houses</MenuItem>
+            {filterHouses.map((h) => (
+              <MenuItem key={h.id} value={h.id}>{houseLabel(h)}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {view === 'blackspots' && (
           <FormControl size="small">
             <InputLabel>Black spot status</InputLabel>
             <Select label="Black spot status" value={spotStatus} onChange={(e) => setSpotStatus(e.target.value)}>
@@ -215,29 +340,7 @@ export default function SweepingPage() {
         )}
       </FilterBar>
 
-      <Tabs
-        value={tab}
-        onChange={(_, v) => setTab(v)}
-        variant="scrollable"
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Tab label="Sweeping stretches" />
-        <Tab label="Black spot register" />
-        <Tab label="Civic events (pothole / debris)" />
-      </Tabs>
-
-      {tab === 0 && (
-        <DataTable
-          columns={stretchColumns}
-          rows={filteredStretches}
-          searchPlaceholder="Search stretches…"
-          emptyTitle="No sweeping stretches"
-        />
-      )}
-
-      {tab === 1 && (
+      {view === 'blackspots' && (
         <DataTable
           columns={spotColumns}
           rows={filteredSpots}
@@ -247,9 +350,21 @@ export default function SweepingPage() {
         />
       )}
 
-      {tab === 2 && (
+      {view === 'stretches' && (
+        <DataTable
+          columns={stretchColumns}
+          rows={filteredStretches}
+          searchPlaceholder="Search stretches…"
+          emptyTitle="No sweeping stretches"
+        />
+      )}
+
+      {view === 'civic' && (
         civicEvents.length === 0 ? (
-          <EmptyState title="No pothole or debris complaints" description="Sourced from Pothole/Debris complaints — manage workflow on Complaint Management." />
+          <EmptyState
+            title="No pothole or debris complaints"
+            description="Sourced from Pothole/Debris complaints — manage workflow on Complaint Management."
+          />
         ) : (
           <DataTable columns={civicColumns} rows={civicEvents} searchPlaceholder="Search civic events…" />
         )
@@ -281,6 +396,15 @@ export default function SweepingPage() {
 
             <Stack spacing={0.5} sx={{ mb: 2 }}>
               <Typography variant="body2">Ward: {wardName(selected.wardId)}</Typography>
+              <Typography variant="body2">Block: {blockName(selected.blockId)}</Typography>
+              <Typography variant="body2">
+                House: {(() => {
+                  const hh = households.find((h) => h.id === selected.householdId);
+                  if (hh) return houseLabel(hh);
+                  if (selected.doorNo) return `Door ${selected.doorNo}`;
+                  return '—';
+                })()}
+              </Typography>
               <Typography variant="body2">Team: {selected.assignedTeam || 'Unassigned'}</Typography>
               <Typography variant="body2">First reported: {formatDate(selected.firstReported)}</Typography>
               <Typography variant="body2">Days unresolved: {selected.daysUnresolved}</Typography>
@@ -419,10 +543,46 @@ export default function SweepingPage() {
               <Select
                 label="Ward"
                 value={form.wardId}
-                onChange={(e) => setForm((f) => ({ ...f, wardId: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, wardId: e.target.value, blockId: '', householdId: '' }))}
               >
                 {wards.map((w) => (
                   <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth size="small" disabled={!form.wardId}>
+              <InputLabel>Block</InputLabel>
+              <Select
+                label="Block"
+                value={form.blockId}
+                onChange={(e) => setForm((f) => ({ ...f, blockId: e.target.value, householdId: '' }))}
+              >
+                <MenuItem value="">Select block</MenuItem>
+                {formBlocks.map((b) => (
+                  <MenuItem key={b.id} value={b.id}>{b.code}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth size="small" disabled={!form.blockId || formHouses.length === 0}>
+              <InputLabel>House</InputLabel>
+              <Select
+                label="House"
+                value={form.householdId}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  const hh = households.find((h) => h.id === next);
+                  setForm((f) => ({
+                    ...f,
+                    householdId: next,
+                    lat: hh ? String(hh.lat) : f.lat,
+                    lng: hh ? String(hh.lng) : f.lng,
+                    location: f.location || (hh ? `${hh.street}, Door ${hh.doorNo}` : f.location),
+                  }));
+                }}
+              >
+                <MenuItem value="">Optional house</MenuItem>
+                {formHouses.map((h) => (
+                  <MenuItem key={h.id} value={h.id}>{houseLabel(h)}</MenuItem>
                 ))}
               </Select>
             </FormControl>

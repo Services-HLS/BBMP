@@ -17,6 +17,7 @@ import EmptyState from '../components/common/EmptyState';
 import { useAppData } from '../context/AppDataContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { AI_EVENT_TYPES, AI_EVENT_STATUSES } from '../constants';
 import { formatDateTime } from '../utils/date';
 
@@ -27,6 +28,7 @@ export default function DashcamPage() {
   const { data, api, loading } = useAppData();
   const { showToast } = useNotifications();
   const { user } = useAuth();
+  const { filterByWard, scopeWards, isScoped, scopeLabel } = useOpsScope();
   const actor = user?.name || 'Demo User';
 
   const [type, setType] = useState('');
@@ -55,9 +57,9 @@ export default function DashcamPage() {
 
   useEffect(() => () => clearLiveTimers(), []);
 
-  const wards = data?.wards || [];
-  const vehicles = data?.vehicles || [];
-  const events = data?.aiEvents || [];
+  const wards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
+  const vehicles = useMemo(() => filterByWard(data?.vehicles || []), [data?.vehicles, filterByWard]);
+  const events = useMemo(() => filterByWard(data?.aiEvents || []), [data?.aiEvents, filterByWard]);
   const supervisors = data?.supervisors || [];
 
   const wardName = (id) => wards.find((w) => w.id === id)?.name || id || '—';
@@ -87,14 +89,14 @@ export default function DashcamPage() {
   );
 
   const columns = [
-    { id: 'id', header: 'Event', accessor: 'id' },
+    { id: 'id', header: 'Event', accessor: 'id', hideOnMobile: true },
     { id: 'type', header: 'Type', accessor: 'type' },
-    { id: 'vehicle', header: 'Vehicle', render: (r) => vehicleName(r.vehicleId) },
-    { id: 'ward', header: 'Ward', render: (r) => wardName(r.wardId) },
-    { id: 'sev', header: 'Severity', accessor: 'severity' },
-    { id: 'conf', header: 'Confidence', render: (r) => `${r.confidence}%` },
-    { id: 'status', header: 'Status', render: (r) => <StatusChip status={r.status} /> },
-    { id: 'ts', header: 'Detected', render: (r) => formatDateTime(r.timestamp) },
+    { id: 'vehicle', header: 'Vehicle', accessor: (r) => vehicleName(r.vehicleId), render: (r) => vehicleName(r.vehicleId) },
+    { id: 'ward', header: 'Ward', accessor: (r) => wardName(r.wardId), render: (r) => wardName(r.wardId), hideOnMobile: true },
+    { id: 'sev', header: 'Severity', accessor: 'severity', hideOnMobile: true },
+    { id: 'conf', header: 'Confidence', accessor: (r) => `${r.confidence}%`, render: (r) => `${r.confidence}%`, hideOnMobile: true },
+    { id: 'status', header: 'Status', accessor: 'status', render: (r) => <StatusChip status={r.status} /> },
+    { id: 'ts', header: 'Detected', accessor: (r) => formatDateTime(r.timestamp), render: (r) => formatDateTime(r.timestamp), hideOnMobile: true },
   ];
 
   const review = async (action) => {
@@ -165,6 +167,7 @@ export default function DashcamPage() {
 
       <Alert severity="info" icon={false}>
         Privacy: synthetic placeholders only — no real footage. Prototype never connects to a live camera.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <Grid container spacing={1.5}>
@@ -280,14 +283,23 @@ export default function DashcamPage() {
         {snapshots.length === 0 ? (
           <EmptyState title="No snapshots" description="Adjust filters to see detection placeholders." />
         ) : (
-          <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                sm: 'repeat(auto-fill, minmax(140px, 1fr))',
+              },
+              gap: 1.25,
+            }}
+          >
             {snapshots.map((s) => (
               <Paper
                 key={s.id}
                 variant="outlined"
                 onClick={() => setSelectedId(s.id)}
                 sx={{
-                  width: 140,
+                  minWidth: 0,
                   p: 1,
                   cursor: 'pointer',
                   '&:hover': { borderColor: 'primary.main' },
@@ -304,17 +316,17 @@ export default function DashcamPage() {
                     backgroundImage: 'linear-gradient(135deg, rgba(18,48,74,0.08), rgba(21,150,106,0.08))',
                   }}
                 >
-                  <Typography variant="caption" textAlign="center" px={0.5}>{s.label}</Typography>
+                  <Typography variant="caption" textAlign="center" px={0.5} sx={{ wordBreak: 'break-word' }}>{s.label}</Typography>
                 </Box>
-                <Typography variant="caption" fontWeight={600} display="block" noWrap>{s.type}</Typography>
-                <Typography variant="caption" color="text.secondary" display="block" noWrap>{s.vehicle}</Typography>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 0.5 }}>
+                <Typography variant="caption" fontWeight={600} display="block" noWrap title={s.type}>{s.type}</Typography>
+                <Typography variant="caption" color="text.secondary" display="block" noWrap title={s.vehicle}>{s.vehicle}</Typography>
+                <Stack spacing={0.5} sx={{ mt: 0.75 }} alignItems="flex-start">
                   <Chip size="small" label={`${s.confidence}%`} sx={{ height: 20, fontSize: 10 }} />
                   <StatusChip status={s.status} />
                 </Stack>
               </Paper>
             ))}
-          </Stack>
+          </Box>
         )}
       </SectionCard>
 

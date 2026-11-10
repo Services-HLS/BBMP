@@ -11,7 +11,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Pencil, CalendarCheck } from 'lucide-react';
 import PageContainer from '../../components/common/PageContainer';
@@ -42,6 +44,8 @@ export default function CitizenHomePage() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [address, setAddress] = useState(EMPTY_HOUSE_ADDRESS);
   const [draft, setDraft] = useState(EMPTY_HOUSE_ADDRESS);
@@ -115,7 +119,7 @@ export default function CitizenHomePage() {
               {formatHouseAddress(address)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Doorstep collection for this house address
+              {t('doorstepForAddress')}
             </Typography>
           </Stack>
         ) : (
@@ -155,18 +159,24 @@ export default function CitizenHomePage() {
             </Box>
           </Stack>
           <Typography variant="body2" color="text.secondary">
-            Open the calendar to see every day and add a reason when collection was missed or garbage was not kept.
+            {t('openCalendarHint')}
           </Typography>
         </Stack>
       </SectionCard>
 
-      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={1}
+        flexWrap="wrap"
+        useFlexGap
+        sx={{ '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } } }}
+      >
         <Button variant="contained" onClick={() => navigate('/citizen/track')}>{t('trackMyAuto')}</Button>
         <Button variant="outlined" onClick={() => navigate('/citizen/report')}>{t('reportProblem')}</Button>
         <Button variant="text" onClick={() => navigate('/citizen/pickup')}>{t('todaysPickup')}</Button>
       </Stack>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm" fullScreen={isMobile}>
         <DialogTitle>{hasHouseAddress(address) ? t('editAddress') : t('addAddress')}</DialogTitle>
         <DialogContent>
           <Stack spacing={1.5} sx={{ pt: 1 }}>
@@ -184,7 +194,16 @@ export default function CitizenHomePage() {
             </Grid>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            px: 2,
+            pb: { xs: 'calc(16px + env(safe-area-inset-bottom))', sm: 2 },
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            gap: 1,
+            '& > :not(style) ~ :not(style)': { ml: { xs: 0, sm: 1 } },
+            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
           <Button onClick={() => setDialogOpen(false)}>{t('cancel')}</Button>
           <Button variant="contained" onClick={saveAddress} disabled={!draft.houseNo.trim() || !draft.street.trim() || !draft.area.trim()}>
             {t('saveAddress')}

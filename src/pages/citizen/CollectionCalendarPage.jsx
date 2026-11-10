@@ -19,7 +19,9 @@ import {
   Stack,
   TextField,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import {
   format,
   startOfMonth,
@@ -105,6 +107,8 @@ export default function CollectionCalendarPage() {
   const [reason, setReason] = useState('');
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const byDate = useMemo(() => {
     const map = new Map();
@@ -183,7 +187,9 @@ export default function CollectionCalendarPage() {
 
   if (loading || !data || !user) return <LoadingState />;
 
-  const weekLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekLabels = isMobile
+    ? ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const startPad = startOfMonth(monthCursor).getDay();
   const today = todayISO();
   const selectedFb = selectedDate ? byDate.get(selectedDate) : null;
@@ -228,9 +234,23 @@ export default function CollectionCalendarPage() {
             </Typography>
           </Stack>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 0.5 }}>
-            {weekLabels.map((d) => (
-              <Typography key={d} variant="caption" fontWeight={700} color="text.secondary" textAlign="center" sx={{ py: 0.5 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              gap: { xs: 0.35, sm: 0.5 },
+              width: '100%',
+            }}
+          >
+            {weekLabels.map((d, i) => (
+              <Typography
+                key={`${d}-${i}`}
+                variant="caption"
+                fontWeight={700}
+                color="text.secondary"
+                textAlign="center"
+                sx={{ py: 0.5, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+              >
                 {d}
               </Typography>
             ))}
@@ -250,25 +270,33 @@ export default function CollectionCalendarPage() {
                   disabled={future}
                   onClick={() => openDay(day)}
                   sx={{
-                    minHeight: { xs: 52, sm: 60 },
-                    borderRadius: 1.5,
+                    minHeight: { xs: 44, sm: 56 },
+                    minWidth: 0,
+                    width: '100%',
+                    borderRadius: { xs: 1, sm: 1.5 },
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    px: 0.25,
+                    px: 0.15,
+                    py: 0.35,
                     cursor: future ? 'default' : 'pointer',
                     ...STATUS_SX[status],
                     outline: isToday ? '2px solid' : 'none',
                     outlineColor: 'primary.main',
-                    outlineOffset: 1,
+                    outlineOffset: 0,
                     font: 'inherit',
+                    WebkitTapHighlightColor: 'transparent',
                   }}
                 >
-                  <Typography variant="caption" fontWeight={isToday ? 800 : 600}>
+                  <Typography
+                    variant="caption"
+                    fontWeight={isToday ? 800 : 600}
+                    sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' }, lineHeight: 1.1 }}
+                  >
                     {format(day, 'd')}
                   </Typography>
-                  <Typography variant="caption" sx={{ fontSize: '0.6rem', lineHeight: 1.1 }}>
+                  <Typography variant="caption" sx={{ fontSize: { xs: '0.55rem', sm: '0.6rem' }, lineHeight: 1.1 }}>
                     {status === 'collected' && '✓'}
                     {status === 'missed_by_auto' && '✗'}
                     {status === 'garbage_not_kept' && '!'}
@@ -324,7 +352,13 @@ export default function CollectionCalendarPage() {
         </Stack>
       </SectionCard>
 
-      <Dialog open={Boolean(selectedDate)} onClose={() => setSelectedDate(null)} fullWidth maxWidth="sm">
+      <Dialog
+        open={Boolean(selectedDate)}
+        onClose={() => setSelectedDate(null)}
+        fullWidth
+        maxWidth="sm"
+        fullScreen={isMobile}
+      >
         <DialogTitle>
           {selectedDate ? format(new Date(`${selectedDate}T12:00:00`), 'dd MMM yyyy') : ''}
         </DialogTitle>
@@ -372,7 +406,16 @@ export default function CollectionCalendarPage() {
             />
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            px: 2,
+            pb: { xs: 'calc(16px + env(safe-area-inset-bottom))', sm: 2 },
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            gap: 1,
+            '& > :not(style) ~ :not(style)': { ml: { xs: 0, sm: 1 } },
+            '& .MuiButton-root': { width: { xs: '100%', sm: 'auto' } },
+          }}
+        >
           <Button onClick={() => setSelectedDate(null)}>{t('cancel')}</Button>
           <Button variant="contained" onClick={saveDay} disabled={saving}>
             {saving ? '…' : t('save')}

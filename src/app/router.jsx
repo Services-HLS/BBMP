@@ -66,7 +66,7 @@ export default function AppRouter() {
           <Route path="/reports" element={<ProtectedRoute roles={ops}><ReportsPage /></ProtectedRoute>} />
           <Route path="/assistant" element={<ProtectedRoute roles={ops}><AssistantPage /></ProtectedRoute>} />
           <Route path="/impact" element={<ProtectedRoute roles={adminOnly}><ImpactPage /></ProtectedRoute>} />
-          <Route path="/notifications" element={<ProtectedRoute roles={ops}><NotificationsPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute roles={[...ops, ...citizen]}><NotificationsPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute roles={ops}><SettingsPage /></ProtectedRoute>} />
 
           <Route path="/citizen" element={<ProtectedRoute roles={citizen}><CitizenHomePage /></ProtectedRoute>} />

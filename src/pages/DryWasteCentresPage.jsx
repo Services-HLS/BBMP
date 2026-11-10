@@ -14,41 +14,47 @@ import MapView from '../components/maps/MapView';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { PROPOSAL_SCALE } from '../constants';
 
 export default function DryWasteCentresPage() {
   const { data, api, loading } = useAppData();
   const { user } = useAuth();
   const { showToast } = useNotifications();
+  const { filterByWard, isScoped, scopeLabel } = useOpsScope();
   const [status, setStatus] = useState('');
   const [selected, setSelected] = useState(null);
   const [note, setNote] = useState('');
   const [exceptionReason, setExceptionReason] = useState('');
 
   const centres = useMemo(() => {
-    let list = data?.dryWasteCentres || [];
+    let list = filterByWard(data?.dryWasteCentres || []);
     if (status) list = list.filter((d) => d.visitStatus === status);
     return list;
-  }, [data, status]);
+  }, [data, status, filterByWard]);
 
-  const pending = (data?.dryWasteCentres || []).filter((d) => d.visitStatus === 'Pending');
+  const pending = useMemo(
+    () => filterByWard(data?.dryWasteCentres || []).filter((d) => d.visitStatus === 'Pending'),
+    [data, filterByWard],
+  );
 
   if (loading || !data) return <LoadingState />;
 
   const columns = [
-    { header: 'Centre ID', accessor: 'centreId' },
-    { header: 'Name', accessor: 'name' },
-    { header: 'Visit', render: (r) => <StatusChip status={r.visitStatus} /> },
-    { header: 'Scheduled', accessor: 'scheduledArrival' },
-    { header: 'Actual', accessor: 'actualArrival' },
-    { header: 'Handover', accessor: 'handoverStatus' },
+    { id: 'id', header: 'Centre ID', accessor: 'centreId', hideOnMobile: true },
+    { id: 'name', header: 'Name', accessor: 'name' },
+    { id: 'visit', header: 'Visit', accessor: 'visitStatus', render: (r) => <StatusChip status={r.visitStatus} /> },
+    { id: 'sched', header: 'Scheduled', accessor: 'scheduledArrival', hideOnMobile: true },
+    { id: 'actual', header: 'Actual', accessor: 'actualArrival', hideOnMobile: true },
+    { id: 'handover', header: 'Handover', accessor: 'handoverStatus', hideOnMobile: true },
   ];
 
   return (
     <PageContainer>
       <PageHeader title="Dry Waste Centres" subtitle="Waste-chain monitoring after collection (illustrative quantities)." />
       <Alert severity="info" icon={false}>
-        Proposal: {PROPOSAL_SCALE.dryWasteCentres} DWCs · Demo: {centres.length} centres. Quantities are illustrative.
+        Proposal: {PROPOSAL_SCALE.dryWasteCentres} DWCs · Demo: {centres.length} centres in view. Quantities are illustrative.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <Grid container spacing={1.5}>

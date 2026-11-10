@@ -52,7 +52,14 @@ export default function SettingsPage() {
         Configuration changes apply to local sample data only.
       </Alert>
 
-      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Tabs
+        value={tab}
+        onChange={(_, v) => setTab(v)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{ borderBottom: 1, borderColor: 'divider', maxWidth: '100%' }}
+      >
         <Tab label="Profile" />
         <Tab label="Preferences" />
         <Tab label="Scorecard rules" />

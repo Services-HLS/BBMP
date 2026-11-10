@@ -1,14 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert, Snackbar } from '@mui/material';
 import { useAppData } from './AppDataContext';
+import { useAuth } from './AuthContext';
+import { filterNotificationsForUser } from '../utils/notifications';
 
 const NotificationContext = createContext(null);
 
 export function NotificationProvider({ children }) {
   const { data, api, refreshKey } = useAppData();
+  const { user } = useAuth();
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-  const notifications = data?.notifications || [];
+  const notifications = useMemo(
+    () => filterNotificationsForUser(data?.notifications || [], user),
+    [data?.notifications, user],
+  );
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
@@ -28,9 +34,10 @@ export function NotificationProvider({ children }) {
   }, [api]);
 
   const markAllRead = useCallback(async () => {
-    await api.markAllNotificationsRead();
+    const ids = notifications.map((n) => n.id);
+    await api.markAllNotificationsRead(ids);
     showToast('All notifications marked as read');
-  }, [api, showToast]);
+  }, [api, notifications, showToast]);
 
   const archive = useCallback(async (id) => {
     await api.archiveNotification(id);

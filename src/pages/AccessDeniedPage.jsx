@@ -9,12 +9,12 @@ export default function AccessDeniedPage() {
   const { role, logout } = useAuth();
 
   return (
-    <Box sx={{ minHeight: '70vh', display: 'grid', placeItems: 'center', p: 3 }}>
-      <Paper variant="outlined" sx={{ p: 4, maxWidth: 440, textAlign: 'center', width: '100%' }}>
+    <Box sx={{ minHeight: '70vh', display: 'grid', placeItems: 'center', p: { xs: 2, sm: 3 } }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 }, maxWidth: 440, textAlign: 'center', width: '100%' }}>
         <Box sx={{ opacity: 0.45, mb: 1.5, display: 'flex', justifyContent: 'center' }}>
           <ShieldOff size={36} strokeWidth={1.75} />
         </Box>
-        <Typography variant="h5" fontWeight={700}>Access denied</Typography>
+        <Typography component="h1" variant="h5" fontWeight={700}>Access denied</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 3 }}>
           Your role ({ROLE_LABELS[role] || role || 'none'}) cannot open this page.
           Logout and sign in with another demo account to switch roles.

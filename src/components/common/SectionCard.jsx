@@ -88,8 +88,14 @@ export default function SectionCard({
 
 export function SectionHeader({ title, action }) {
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
-      <Typography className="bbmp-section-title" component="h2">
+    <Stack
+      direction={{ xs: 'column', sm: 'row' }}
+      alignItems={{ xs: 'stretch', sm: 'center' }}
+      justifyContent="space-between"
+      spacing={1}
+      sx={{ mb: 1.5 }}
+    >
+      <Typography className="bbmp-section-title" component="h2" sx={{ m: 0 }}>
         {title}
       </Typography>
       {action}

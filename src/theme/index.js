@@ -253,7 +253,26 @@ const getDesignTokens = (mode) => {
       },
       MuiDialog: {
         styleOverrides: {
-          paper: { borderRadius: radii.xl },
+          paper: {
+            borderRadius: radii.xl,
+            margin: 16,
+            width: 'calc(100% - 32px)',
+            maxHeight: 'calc(100% - 32px)',
+            '&.MuiDialog-paperFullScreen': {
+              margin: 0,
+              width: '100%',
+              maxHeight: '100%',
+              borderRadius: 0,
+            },
+          },
+        },
+      },
+      MuiDialogActions: {
+        styleOverrides: {
+          root: {
+            padding: '12px 16px 16px',
+            gap: 8,
+          },
         },
       },
       MuiAlert: {

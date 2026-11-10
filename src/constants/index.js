@@ -2,7 +2,7 @@ export const APP_NAME = 'BBMP One App';
 export const APP_TAGLINE = 'Solid Waste Management & Civic Operations';
 export const APP_ENV_LABEL = 'DEMO ENVIRONMENT · SAMPLE DATA';
 export const APP_VERSION = '1.0.0-demo';
-export const STORAGE_VERSION = '1.2.0';
+export const STORAGE_VERSION = '1.4.1';
 export const STORAGE_KEY = `bbmp-one-app-v${STORAGE_VERSION}`;
 export const SESSION_KEY = 'bbmp-one-app-session';
 export const PREFS_KEY = 'bbmp-one-app-prefs';
@@ -164,6 +164,9 @@ export const NOTIFICATION_CATEGORIES = [
   'Overdue Complaint',
   'New Assignment',
   'Resolved Complaint',
+  'Pickup Reminder',
+  'Arrival Alert',
+  'Complaint Update',
   'System',
 ];
 

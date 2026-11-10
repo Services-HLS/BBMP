@@ -4,10 +4,11 @@ import {
   TableHead, TableRow, TableCell, TableBody, TableContainer,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import PageContainer from '../components/common/PageContainer';
 import SectionCard from '../components/common/SectionCard';
+import CivicMark from '../components/brand/CivicMark';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { formatDateTime } from '../utils/date';
@@ -56,9 +57,29 @@ export default function AssistantPage() {
         Answers are generated locally from demo data — not a connected AI service.
       </Alert>
 
-      <Stack direction="row" flexWrap="wrap" gap={1}>
+      <Stack direction="row" flexWrap="wrap" gap={1} sx={{ maxWidth: '100%' }}>
         {SUGGESTIONS.map((s) => (
-          <Chip key={s} label={s} onClick={() => ask(s)} clickable disabled={busy} />
+          <Chip
+            key={s}
+            label={s}
+            onClick={() => ask(s)}
+            clickable
+            disabled={busy}
+            title={s}
+            sx={{
+              maxWidth: '100%',
+              height: 'auto',
+              py: 0.75,
+              '& .MuiChip-label': {
+                whiteSpace: 'normal',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                lineHeight: 1.35,
+              },
+            }}
+          />
         ))}
       </Stack>
 
@@ -78,7 +99,7 @@ export default function AssistantPage() {
             >
               {m.role === 'assistant' && (
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-                  <Bot size={16} />
+                  <CivicMark size={22} variant="light" />
                   <Typography variant="caption">Demo assistant</Typography>
                 </Stack>
               )}

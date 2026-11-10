@@ -23,8 +23,8 @@ import FilterBar from '../components/common/FilterBar';
 import SectionCard from '../components/common/SectionCard';
 import ChartCard from '../components/common/ChartCard';
 import { useAppData } from '../context/AppDataContext';
-import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { formatDateTime } from '../utils/date';
 import { DATE_FILTERS, APP_ENV_LABEL } from '../constants';
 
@@ -34,8 +34,8 @@ export default function DashboardPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { data, api, loading: storeLoading } = useAppData();
-  const { user, isSupervisor } = useAuth();
   const { showToast } = useNotifications();
+  const { isScoped, allowedWardIdList, scopeWards, scopeLabel } = useOpsScope();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState('daily');
@@ -43,14 +43,10 @@ export default function DashboardPage() {
   const [corporationId, setCorporationId] = useState('');
 
   const wards = useMemo(() => {
-    let list = data?.wards || [];
-    if (isSupervisor && user?.wardIds?.length) {
-      const allowed = new Set(user.wardIds);
-      list = list.filter((w) => allowed.has(w.id));
-    }
+    let list = scopeWards(data?.wards || []);
     if (corporationId) list = list.filter((w) => w.corporationId === corporationId);
     return list;
-  }, [data?.wards, corporationId, isSupervisor, user?.wardIds]);
+  }, [data?.wards, corporationId, scopeWards]);
 
   const load = async () => {
     setLoading(true);
@@ -58,6 +54,7 @@ export default function DashboardPage() {
       const result = await api.getDashboardStats({
         dateFilter,
         wardId: wardId || undefined,
+        wardIds: !wardId && isScoped ? allowedWardIdList : undefined,
         corporationId: corporationId || undefined,
       });
       setStats(result);
@@ -85,7 +82,7 @@ export default function DashboardPage() {
         </Typography>
       ),
     },
-    { id: 'vehicles', header: 'Autos', accessor: 'vehicles', align: 'right' },
+    { id: 'vehicles', header: 'Autos', accessor: 'vehicles', align: 'right', hideOnMobile: true },
     { id: 'openComplaints', header: 'Open', accessor: 'openComplaints', align: 'right' },
   ], []);
 
@@ -127,6 +124,7 @@ export default function DashboardPage() {
       <Alert severity="info" icon={false}>
         {APP_ENV_LABEL} · {meta?.demoRecordCounts?.vehicles || 0} demo autos loaded
         (proposal scale is larger — see Routes for headline figures).
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
       <FilterBar>
@@ -214,7 +212,11 @@ export default function DashboardPage() {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Legend
+                wrapperStyle={{ fontSize: isMobile ? 10 : 11 }}
+                layout={isMobile ? 'horizontal' : 'horizontal'}
+                verticalAlign="bottom"
+              />
             </PieChart>
           </ChartCard>
         </Grid>
@@ -222,7 +224,14 @@ export default function DashboardPage() {
           <ChartCard title="Route performance" subtitle="Coverage by demo route" height={240}>
             <BarChart data={charts.routePerformance} margin={{ left: 0, right: 8 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={48} />
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: isMobile ? 9 : 10 }}
+                interval={isMobile ? 'preserveStartEnd' : 0}
+                angle={isMobile ? -35 : -20}
+                textAnchor="end"
+                height={isMobile ? 56 : 48}
+              />
               <YAxis tick={{ fontSize: 11 }} width={32} />
               <Tooltip />
               <Legend wrapperStyle={{ fontSize: 11 }} />

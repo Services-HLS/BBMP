@@ -1,6 +1,7 @@
 import { Box, Stack, Typography } from '@mui/material';
 import CivicMark from './CivicMark';
 import { colors } from '../../theme/tokens';
+import { useTranslation } from '../../hooks/useTranslation';
 
 /**
  * Brand lockup: Eco City Leaf Emblem + "BBMP" + "One App".
@@ -9,12 +10,14 @@ export default function AppLogo({
   compact = false,
   showEnv = true,
   variant = 'light',
-  subtitle = 'Solid Waste Management & Civic Operations',
+  subtitle,
   markSize,
 }) {
+  const { t, language } = useTranslation();
   const isDark = variant === 'dark';
   const size = markSize ?? (compact ? 36 : 42);
   const isHero = size >= 64;
+  const resolvedSubtitle = subtitle ?? t('appSubtitle');
 
   return (
     <Stack
@@ -51,24 +54,39 @@ export default function AppLogo({
               gap: 0.75,
             }}
           >
-            <Box
-              component="span"
-              sx={{
-                color: isDark ? '#FFFFFF' : colors.navy,
-                textShadow: isDark ? '0 1px 3px rgba(0,0,0,0.4)' : 'none',
-              }}
-            >
-              BBMP
-            </Box>
-            <Box
-              component="span"
-              sx={{
-                color: isDark ? colors.leafBright : colors.leaf,
-                textShadow: isDark ? '0 1px 3px rgba(0,0,0,0.35)' : 'none',
-              }}
-            >
-              One App
-            </Box>
+            {language === 'kn' ? (
+              <Box
+                component="span"
+                sx={{
+                  color: isDark ? '#FFFFFF' : colors.navy,
+                  textShadow: isDark ? '0 1px 3px rgba(0,0,0,0.4)' : 'none',
+                  fontFamily: '"Noto Sans Kannada", "Plus Jakarta Sans", sans-serif',
+                }}
+              >
+                {t('appName')}
+              </Box>
+            ) : (
+              <>
+                <Box
+                  component="span"
+                  sx={{
+                    color: isDark ? '#FFFFFF' : colors.navy,
+                    textShadow: isDark ? '0 1px 3px rgba(0,0,0,0.4)' : 'none',
+                  }}
+                >
+                  BBMP
+                </Box>
+                <Box
+                  component="span"
+                  sx={{
+                    color: isDark ? colors.leafBright : colors.leaf,
+                    textShadow: isDark ? '0 1px 3px rgba(0,0,0,0.35)' : 'none',
+                  }}
+                >
+                  One App
+                </Box>
+              </>
+            )}
           </Typography>
           {showEnv ? (
             <Typography
@@ -76,7 +94,9 @@ export default function AppLogo({
               sx={{
                 display: 'block',
                 mt: isHero ? 0.55 : 0.35,
-                fontFamily: '"Plus Jakarta Sans", "Source Sans 3", "Segoe UI", sans-serif',
+                fontFamily: language === 'kn'
+                  ? '"Noto Sans Kannada", "Plus Jakarta Sans", "Source Sans 3", sans-serif'
+                  : '"Plus Jakarta Sans", "Source Sans 3", "Segoe UI", sans-serif',
                 fontSize: isHero ? { xs: '0.78rem', sm: '0.88rem' } : '0.65rem',
                 fontWeight: 600,
                 lineHeight: 1.3,
@@ -84,7 +104,7 @@ export default function AppLogo({
                 color: isDark ? 'rgba(220,230,236,0.82)' : colors.textSecondary,
               }}
             >
-              {subtitle}
+              {resolvedSubtitle}
             </Typography>
           ) : null}
         </Box>

@@ -12,38 +12,43 @@ import ConfirmDialog from '../components/common/ConfirmDialog';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import useOpsScope from '../hooks/useOpsScope';
 import { formatDate } from '../utils/date';
 
 export default function CoveragePage() {
   const { data, api, loading } = useAppData();
   const { user } = useAuth();
   const { showToast } = useNotifications();
+  const { filterByWard, scopeWards, isScoped, scopeLabel } = useOpsScope();
   const [wardId, setWardId] = useState('');
   const [status, setStatus] = useState('');
   const [confirm, setConfirm] = useState(null);
 
+  const scopedWards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
+
   const rows = useMemo(() => {
-    let list = data?.households || [];
+    let list = filterByWard(data?.households || []);
     if (wardId) list = list.filter((h) => h.wardId === wardId);
     if (status) list = list.filter((h) => h.coverageStatus === status);
     return list;
-  }, [data, wardId, status]);
+  }, [data, wardId, status, filterByWard]);
 
   if (loading || !data) return <LoadingState />;
 
   const columns = [
-    { header: 'Door', accessor: 'doorNo' },
-    { header: 'Street', accessor: 'street' },
-    { header: 'Block', accessor: 'blockId' },
-    { header: 'Status', render: (r) => <StatusChip status={r.coverageStatus} /> },
-    { header: 'Last collection', accessor: (r) => formatDate(r.lastCollection) },
-    { header: 'Verification', accessor: 'verificationMethod' },
+    { id: 'door', header: 'Door', accessor: 'doorNo' },
+    { id: 'street', header: 'Street', accessor: 'street', hideOnMobile: true },
+    { id: 'block', header: 'Block', accessor: 'blockId', hideOnMobile: true },
+    { id: 'status', header: 'Status', accessor: 'coverageStatus', render: (r) => <StatusChip status={r.coverageStatus} /> },
+    { id: 'last', header: 'Last collection', accessor: (r) => formatDate(r.lastCollection), hideOnMobile: true },
+    { id: 'verify', header: 'Verification', accessor: 'verificationMethod', hideOnMobile: true },
     {
+      id: 'actions',
       header: 'Actions',
       render: (r) => (
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={0.75} sx={{ minWidth: { xs: 96, sm: 'auto' } }}>
-          <Button size="small" onClick={(e) => { e.stopPropagation(); setConfirm({ type: 'complete', row: r }); }}>Mark done</Button>
-          <Button size="small" color="warning" onClick={(e) => { e.stopPropagation(); setConfirm({ type: 'missed', row: r }); }}>Flag missed</Button>
+        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+          <Button size="small" onClick={(e) => { e.stopPropagation(); setConfirm({ type: 'complete', row: r }); }}>Done</Button>
+          <Button size="small" color="warning" onClick={(e) => { e.stopPropagation(); setConfirm({ type: 'missed', row: r }); }}>Missed</Button>
         </Stack>
       ),
     },
@@ -54,13 +59,14 @@ export default function CoveragePage() {
       <PageHeader title="Household Coverage" subtitle="Street/house sample records with simulated verification." />
       <Alert severity="info" icon={false}>
         Coverage actions are simulated and audited in demo storage — not real field verification.
+        {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
       <FilterBar>
         <FormControl size="small">
           <InputLabel>Ward</InputLabel>
           <Select label="Ward" value={wardId} onChange={(e) => setWardId(e.target.value)}>
             <MenuItem value="">All</MenuItem>
-            {data.wards.map((w) => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
+            {scopedWards.map((w) => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
           </Select>
         </FormControl>
         <FormControl size="small">

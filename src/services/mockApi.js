@@ -77,12 +77,13 @@ function pushNotification(partial) {
     read: false,
     createdAt: nowISO(),
     priority: 'Medium',
+    roles: partial.roles || ['admin', 'supervisor'],
     ...partial,
   });
 }
 
 /* ---------- Lookups ---------- */
-export async function getDashboardStats({ wardId, corporationId, dateFilter } = {}) {
+export async function getDashboardStats({ wardId, wardIds, corporationId, dateFilter } = {}) {
   await delay();
   const data = ensure();
   let vehicles = [...data.vehicles];
@@ -90,6 +91,19 @@ export async function getDashboardStats({ wardId, corporationId, dateFilter } = 
   let routes = [...data.routes];
   let aiEvents = [...data.aiEvents];
   let sweeping = [...data.sweepingStretches];
+  let centres = [...data.dryWasteCentres];
+  let wardsList = [...data.wards];
+
+  const scopeSet = wardIds?.length ? new Set(wardIds) : null;
+  if (scopeSet) {
+    vehicles = vehicles.filter((v) => scopeSet.has(v.wardId));
+    complaints = complaints.filter((c) => scopeSet.has(c.wardId));
+    routes = routes.filter((r) => scopeSet.has(r.wardId));
+    aiEvents = aiEvents.filter((e) => scopeSet.has(e.wardId));
+    sweeping = sweeping.filter((s) => scopeSet.has(s.wardId));
+    centres = centres.filter((d) => scopeSet.has(d.wardId));
+    wardsList = wardsList.filter((w) => scopeSet.has(w.id));
+  }
 
   if (wardId) {
     vehicles = vehicles.filter((v) => v.wardId === wardId);
@@ -97,12 +111,15 @@ export async function getDashboardStats({ wardId, corporationId, dateFilter } = 
     routes = routes.filter((r) => r.wardId === wardId);
     aiEvents = aiEvents.filter((e) => e.wardId === wardId);
     sweeping = sweeping.filter((s) => s.wardId === wardId);
+    centres = centres.filter((d) => d.wardId === wardId);
   }
   if (corporationId) {
     vehicles = vehicles.filter((v) => v.corporationId === corporationId);
-    const wardIds = new Set(data.wards.filter((w) => w.corporationId === corporationId).map((w) => w.id));
-    complaints = complaints.filter((c) => wardIds.has(c.wardId));
+    const corpWards = new Set(data.wards.filter((w) => w.corporationId === corporationId).map((w) => w.id));
+    complaints = complaints.filter((c) => corpWards.has(c.wardId));
     routes = routes.filter((r) => r.corporationId === corporationId);
+    centres = centres.filter((d) => corpWards.has(d.wardId));
+    wardsList = wardsList.filter((w) => w.corporationId === corporationId);
   }
 
   const onRoute = vehicles.filter((v) => v.status === 'On Route').length;
@@ -113,8 +130,8 @@ export async function getDashboardStats({ wardId, corporationId, dateFilter } = 
   const unresolvedAi = aiEvents.filter((e) => !['Resolved', 'False Positive'].includes(e.status)).length;
   const speedAlerts = aiEvents.filter((e) => e.type === 'Speeding' && e.status !== 'False Positive').length;
   const sweepingDone = sweeping.filter((s) => s.status === 'Completed').length;
-  const dwcPending = data.dryWasteCentres.filter((d) => d.visitStatus === 'Pending').length;
-  const dwcVisited = data.dryWasteCentres.filter((d) => d.visitStatus === 'Completed').length;
+  const dwcPending = centres.filter((d) => d.visitStatus === 'Pending').length;
+  const dwcVisited = centres.filter((d) => d.visitStatus === 'Completed').length;
 
   const complaintsByCategory = {};
   complaints.forEach((c) => {
@@ -126,8 +143,8 @@ export async function getDashboardStats({ wardId, corporationId, dateFilter } = 
     vehicleStatus[v.status] = (vehicleStatus[v.status] || 0) + 1;
   });
 
-  const wardPerf = data.wards.map((w) => {
-    const wv = data.vehicles.filter((v) => v.wardId === w.id);
+  const wardPerf = wardsList.map((w) => {
+    const wv = vehicles.filter((v) => v.wardId === w.id);
     const done = wv.reduce((s, v) => s + v.completedStops, 0);
     const exp = wv.reduce((s, v) => s + v.expectedStops, 0);
     return {
@@ -135,7 +152,7 @@ export async function getDashboardStats({ wardId, corporationId, dateFilter } = 
       name: w.name,
       coverage: exp ? Math.round((done / exp) * 100) : 0,
       vehicles: wv.length,
-      openComplaints: data.complaints.filter((c) => c.wardId === w.id && c.status !== 'Resolved').length,
+      openComplaints: complaints.filter((c) => c.wardId === w.id && c.status !== 'Resolved').length,
     };
   });
 
@@ -315,6 +332,8 @@ export async function flagMissedPickup(householdId, actor = 'Supervisor') {
     relatedId: householdId,
     link: '/coverage',
     priority: 'High',
+    roles: ['admin', 'supervisor'],
+    wardIds: hh.wardId ? [hh.wardId] : undefined,
   });
   persist();
   return hh;
@@ -392,6 +411,8 @@ export async function markDwcException(id, reason, actor = 'Supervisor') {
     relatedId: id,
     link: '/dry-waste-centres',
     priority: 'High',
+    roles: ['admin', 'supervisor'],
+    wardIds: dwc.wardId ? [dwc.wardId] : (dwc.assignedWardIds || undefined),
   });
   pushAudit(actor, 'DWC Exception', 'dwc', id, reason);
   persist();
@@ -405,6 +426,10 @@ export async function getComplaints(filters = {}) {
   if (filters.status) list = list.filter((c) => c.status === filters.status);
   if (filters.category) list = list.filter((c) => c.category === filters.category);
   if (filters.wardId) list = list.filter((c) => c.wardId === filters.wardId);
+  if (filters.wardIds?.length) {
+    const set = new Set(filters.wardIds);
+    list = list.filter((c) => set.has(c.wardId));
+  }
   if (filters.reporterId) list = list.filter((c) => c.reporterId === filters.reporterId);
   if (filters.assignedTo) list = list.filter((c) => c.assignedTo === filters.assignedTo);
   if (filters.q) {
@@ -457,7 +482,22 @@ export async function createComplaint(payload, actor = 'Citizen') {
     relatedId: id,
     link: '/complaints',
     priority: complaint.priority === 'Critical' ? 'Critical' : 'Medium',
+    roles: ['admin', 'supervisor'],
+    wardIds: complaint.wardId ? [complaint.wardId] : undefined,
   });
+  if (complaint.reporterId) {
+    pushNotification({
+      category: 'Complaint Update',
+      title: 'Complaint submitted',
+      message: `${id} was received. Track it in My Reports.`,
+      relatedType: 'complaint',
+      relatedId: id,
+      link: '/citizen/reports',
+      priority: 'Low',
+      roles: ['citizen'],
+      userIds: [complaint.reporterId],
+    });
+  }
   pushAudit(actor, 'Create Complaint', 'complaint', id, complaint.title);
   persist();
   return complaint;
@@ -487,7 +527,22 @@ export async function updateComplaintStatus(id, status, note, actor = 'Superviso
       relatedId: id,
       link: '/complaints',
       priority: 'Low',
+      roles: ['admin', 'supervisor'],
+      wardIds: c.wardId ? [c.wardId] : undefined,
     });
+    if (c.reporterId) {
+      pushNotification({
+        category: 'Complaint Update',
+        title: 'Your report was resolved',
+        message: `${id} has been marked resolved.`,
+        relatedType: 'complaint',
+        relatedId: id,
+        link: '/citizen/reports',
+        priority: 'Medium',
+        roles: ['citizen'],
+        userIds: [c.reporterId],
+      });
+    }
   }
   pushAudit(actor, `Complaint → ${status}`, 'complaint', id, note || '');
   persist();
@@ -509,6 +564,8 @@ export async function assignComplaint(id, supervisorId, actor = 'Admin') {
     relatedType: 'complaint',
     relatedId: id,
     link: '/complaints',
+    roles: ['admin', 'supervisor'],
+    wardIds: c.wardId ? [c.wardId] : undefined,
   });
   pushAudit(actor, 'Assign Complaint', 'complaint', id, supervisorId);
   persist();
@@ -569,6 +626,9 @@ export async function createBlackSpot(payload, actor = 'Supervisor') {
     category: payload.category,
     severity: payload.severity || 'Medium',
     wardId: payload.wardId,
+    blockId: payload.blockId || null,
+    householdId: payload.householdId || null,
+    doorNo: payload.doorNo || null,
     location: payload.location,
     lat: payload.lat,
     lng: payload.lng,
@@ -703,9 +763,12 @@ export async function markNotificationRead(id) {
   return n;
 }
 
-export async function markAllNotificationsRead() {
+export async function markAllNotificationsRead(ids) {
   await delay(50);
-  ensure().notifications.forEach((n) => { n.read = true; });
+  const idSet = Array.isArray(ids) && ids.length ? new Set(ids) : null;
+  ensure().notifications.forEach((n) => {
+    if (!idSet || idSet.has(n.id)) n.read = true;
+  });
   persist();
   return memory.notifications;
 }
