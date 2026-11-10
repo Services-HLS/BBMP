@@ -28,7 +28,7 @@ import CitizenHomePage from '../pages/citizen/CitizenHomePage';
 import TrackAutoPage from '../pages/citizen/TrackAutoPage';
 import ReportProblemPage from '../pages/citizen/ReportProblemPage';
 import MyReportsPage from '../pages/citizen/MyReportsPage';
-import MyBlockPage from '../pages/citizen/MyBlockPage';
+import CollectionCalendarPage from '../pages/citizen/CollectionCalendarPage';
 import TodaysPickupPage from '../pages/citizen/TodaysPickupPage';
 import CitizenSettingsPage from '../pages/citizen/CitizenSettingsPage';
 
@@ -73,7 +73,7 @@ export default function AppRouter() {
           <Route path="/citizen/track" element={<ProtectedRoute roles={citizen}><TrackAutoPage /></ProtectedRoute>} />
           <Route path="/citizen/report" element={<ProtectedRoute roles={citizen}><ReportProblemPage /></ProtectedRoute>} />
           <Route path="/citizen/reports" element={<ProtectedRoute roles={citizen}><MyReportsPage /></ProtectedRoute>} />
-          <Route path="/citizen/block" element={<ProtectedRoute roles={citizen}><MyBlockPage /></ProtectedRoute>} />
+          <Route path="/citizen/calendar" element={<ProtectedRoute roles={citizen}><CollectionCalendarPage /></ProtectedRoute>} />
           <Route path="/citizen/pickup" element={<ProtectedRoute roles={citizen}><TodaysPickupPage /></ProtectedRoute>} />
           <Route path="/citizen/settings" element={<ProtectedRoute roles={citizen}><CitizenSettingsPage /></ProtectedRoute>} />
         </Route>

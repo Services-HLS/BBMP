@@ -535,18 +535,54 @@ export function createSeedData() {
     },
   ];
 
-  const feedback = [
-    {
-      id: 'fb-1', citizenId: 'user-citizen-1', wardId: 'ward-112', blockId: 'block-112-A',
-      date: todayISO(), collected: true, rating: 4, segregationFeedback: 'Good',
-      comment: 'On time today', createdAt: nowISO(),
-    },
-    {
-      id: 'fb-2', citizenId: 'user-citizen-1', wardId: 'ward-112', blockId: 'block-112-A',
-      date: daysAgoISO(1), collected: false, rating: 2, segregationFeedback: 'Partial',
-      comment: 'Missed our street', createdAt: `${daysAgoISO(1)}T12:00:00.000Z`,
-    },
-  ];
+  const feedback = Array.from({ length: 35 }, (_, i) => {
+    const date = daysAgoISO(i);
+    const dow = new Date(`${date}T12:00:00`).getDay();
+    if (dow === 0) {
+      return {
+        id: `fb-${i + 1}`,
+        citizenId: 'user-citizen-1',
+        wardId: 'ward-112',
+        blockId: 'block-112-A',
+        date,
+        collected: false,
+        outcome: 'no_service',
+        noService: true,
+        reason: 'No collection scheduled (Sunday)',
+        rating: null,
+        segregationFeedback: '',
+        comment: 'No collection scheduled (Sunday)',
+        createdAt: `${date}T12:00:00.000Z`,
+      };
+    }
+    const roll = seeded(i + 11);
+    let outcome = 'collected';
+    let reason;
+    let comment = 'Doorstep pickup done';
+    if (roll < 0.12) {
+      outcome = 'missed_by_auto';
+      reason = 'Auto did not come to our street';
+      comment = 'Auto missed collection';
+    } else if (roll < 0.22) {
+      outcome = 'garbage_not_kept';
+      reason = 'We did not keep garbage out';
+      comment = 'Waste not kept outside that day';
+    }
+    return {
+      id: `fb-${i + 1}`,
+      citizenId: 'user-citizen-1',
+      wardId: 'ward-112',
+      blockId: 'block-112-A',
+      date,
+      collected: outcome === 'collected',
+      outcome,
+      reason,
+      rating: outcome === 'collected' ? 3 + Math.floor(seeded(i + 5) * 3) : 2,
+      segregationFeedback: outcome === 'collected' ? 'Good' : 'Partial',
+      comment,
+      createdAt: `${date}T12:00:00.000Z`,
+    };
+  });
 
   const auditLog = [
     {

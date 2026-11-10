@@ -15,6 +15,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { loadPrefs, savePrefs } from '../../utils/storage';
 import { formatDateTime, formatTime } from '../../utils/date';
+import { formatHouseAddress, getCitizenHouseAddress, hasHouseAddress } from '../../utils/citizenAddress';
 
 function readAlertPrefs() {
   const prefs = loadPrefs();
@@ -38,6 +39,8 @@ export default function TrackAutoPage() {
       || data.vehicles.find((v) => v.wardId === user.wardId)
       || null;
   }, [data, user]);
+
+  const houseAddress = useMemo(() => getCitizenHouseAddress(user), [user]);
 
   const route = useMemo(
     () => (data && vehicle ? data.routes.find((r) => r.id === vehicle.routeId) : null),
@@ -93,6 +96,16 @@ export default function TrackAutoPage() {
       <Alert severity="warning" icon={false}>
         Locations are fictional demo positions around Bengaluru — not live GPS tracking.
       </Alert>
+
+      <SectionCard title={t('myHouseAddress')}>
+        {hasHouseAddress(houseAddress) ? (
+          <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'pre-line' }}>
+            {formatHouseAddress(houseAddress)}
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">{t('noAddressYet')}</Typography>
+        )}
+      </SectionCard>
 
       {vehicle ? (
         <>
@@ -177,7 +190,7 @@ export default function TrackAutoPage() {
           </SectionCard>
         </>
       ) : (
-        <Alert severity="info">No assigned demo auto for your block.</Alert>
+        <Alert severity="info">No assigned demo auto for your house collection route.</Alert>
       )}
     </PageContainer>
   );

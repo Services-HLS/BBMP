@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box, FormControl, InputLabel, MenuItem, Select, Stack,
   Typography, Switch, FormControlLabel, Divider, Button, Alert, Grid,
@@ -15,6 +15,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ROLE_LABELS } from '../../constants';
 import { loadPrefs, savePrefs } from '../../utils/storage';
+import { formatHouseAddress, getCitizenHouseAddress, hasHouseAddress } from '../../utils/citizenAddress';
 
 function readNotifPrefs() {
   const prefs = loadPrefs();
@@ -34,8 +35,7 @@ export default function CitizenSettingsPage() {
   const navigate = useNavigate();
   const [notifPrefs, setNotifPrefs] = useState(readNotifPrefs);
 
-  const ward = data?.wards?.find((w) => w.id === user?.wardId);
-  const block = data?.blocks?.find((b) => b.id === user?.blockId);
+  const houseAddress = useMemo(() => getCitizenHouseAddress(user), [user]);
 
   const updateNotif = (key, value) => {
     setNotifPrefs((prev) => {
@@ -64,10 +64,21 @@ export default function CitizenSettingsPage() {
               <Typography variant="body2"><strong>Email:</strong> {user?.email}</Typography>
               <Typography variant="body2"><strong>Phone:</strong> {user?.phone || '—'}</Typography>
               <Typography variant="body2"><strong>Role:</strong> {ROLE_LABELS[user?.role]}</Typography>
-              <Typography variant="body2"><strong>{t('ward')}:</strong> {ward?.name || user?.wardId}</Typography>
-              <Typography variant="body2">
-                <strong>{t('block')}:</strong> {block ? `${block.name} (${block.code})` : user?.blockId}
+              <Typography variant="body2" component="div">
+                <strong>{t('myHouseAddress')}:</strong>
+                {hasHouseAddress(houseAddress) ? (
+                  <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mt: 0.5 }}>
+                    {formatHouseAddress(houseAddress)}
+                  </Typography>
+                ) : (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {t('noAddressYet')}
+                  </Typography>
+                )}
               </Typography>
+              <Button size="small" variant="outlined" onClick={() => navigate('/citizen')} sx={{ alignSelf: 'flex-start' }}>
+                {hasHouseAddress(houseAddress) ? t('editAddress') : t('addAddress')}
+              </Button>
             </Stack>
           </SectionCard>
         </Grid>

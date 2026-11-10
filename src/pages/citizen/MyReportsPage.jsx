@@ -128,6 +128,11 @@ export default function MyReportsPage() {
             <Typography variant="h6">{selectedLive.id}</Typography>
             <Box sx={{ mt: 1 }}><StatusChip status={selectedLive.status} /></Box>
             <Typography variant="subtitle2" sx={{ mt: 2 }}>{selectedLive.title}</Typography>
+            {selectedLive.houseAddress && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                <strong>House address:</strong> {selectedLive.houseAddress}
+              </Typography>
+            )}
             <Typography variant="body2" sx={{ mt: 1 }}>{selectedLive.description}</Typography>
             {selectedLive.photoDataUrl && (
               <Box

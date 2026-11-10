@@ -2,10 +2,11 @@ export const APP_NAME = 'BBMP One App';
 export const APP_TAGLINE = 'Solid Waste Management & Civic Operations';
 export const APP_ENV_LABEL = 'DEMO ENVIRONMENT · SAMPLE DATA';
 export const APP_VERSION = '1.0.0-demo';
-export const STORAGE_VERSION = '1.0.0';
+export const STORAGE_VERSION = '1.2.0';
 export const STORAGE_KEY = `bbmp-one-app-v${STORAGE_VERSION}`;
 export const SESSION_KEY = 'bbmp-one-app-session';
 export const PREFS_KEY = 'bbmp-one-app-prefs';
+export const CITIZEN_PROFILE_KEY = 'bbmp-citizen-profiles';
 
 /** Proposal-scale reference figures (not equal to demo record counts) */
 export const PROPOSAL_SCALE = {
@@ -41,6 +42,14 @@ export const DEMO_USERS = [
     wardId: 'ward-112',
     blockId: 'block-112-A',
     phone: '+91 98XXX XX001',
+    defaultAddress: {
+      houseNo: '42',
+      street: '100 Feet Road',
+      area: 'Indiranagar',
+      landmark: 'Near metro station',
+      city: 'Bengaluru',
+      pincode: '560038',
+    },
   },
   {
     id: 'user-supervisor-1',

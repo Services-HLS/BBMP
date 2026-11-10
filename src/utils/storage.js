@@ -1,4 +1,4 @@
-import { STORAGE_KEY, SESSION_KEY, PREFS_KEY, STORAGE_VERSION } from '../constants';
+import { STORAGE_KEY, SESSION_KEY, PREFS_KEY, CITIZEN_PROFILE_KEY, STORAGE_VERSION } from '../constants';
 
 export function safeParse(raw, fallback = null) {
   try {
@@ -84,6 +84,36 @@ export function savePrefs(prefs) {
   const store = getStorage();
   if (!store) return;
   store.setItem(PREFS_KEY, JSON.stringify(prefs));
+}
+
+export function loadCitizenProfiles() {
+  const store = getStorage();
+  if (!store) return {};
+  return safeParse(store.getItem(CITIZEN_PROFILE_KEY), {}) || {};
+}
+
+export function loadCitizenProfile(userId) {
+  if (!userId) return null;
+  const all = loadCitizenProfiles();
+  return all[userId] || null;
+}
+
+export function saveCitizenProfile(userId, profile) {
+  const store = getStorage();
+  if (!store || !userId) return false;
+  try {
+    const all = loadCitizenProfiles();
+    all[userId] = {
+      ...all[userId],
+      ...profile,
+      updatedAt: new Date().toISOString(),
+    };
+    store.setItem(CITIZEN_PROFILE_KEY, JSON.stringify(all));
+    return true;
+  } catch (err) {
+    console.error('Failed to save citizen profile', err);
+    return false;
+  }
 }
 
 export function setTempSession(key, value) {

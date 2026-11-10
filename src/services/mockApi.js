@@ -436,6 +436,7 @@ export async function createComplaint(payload, actor = 'Citizen') {
     reporterId: payload.reporterId,
     wardId: payload.wardId,
     blockId: payload.blockId,
+    houseAddress: payload.houseAddress || null,
     routeId: payload.routeId || null,
     lat: payload.lat || null,
     lng: payload.lng || null,
@@ -445,7 +446,7 @@ export async function createComplaint(payload, actor = 'Citizen') {
     status: 'Submitted',
     photoDataUrl: payload.photoDataUrl || null,
     slaDeadline: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
-    history: [{ at: nowISO(), action: 'Submitted', by: actor, note: 'Complaint submitted' }],
+    history: [{ at: nowISO(), action: 'Submitted', by: actor, note: payload.houseAddress ? `Submitted · ${payload.houseAddress}` : 'Complaint submitted' }],
   };
   ensure().complaints.unshift(complaint);
   pushNotification({
@@ -751,8 +752,19 @@ export async function getFeedback(filters = {}) {
 
 export async function submitFeedback(payload, actor = 'Citizen') {
   await delay();
-  const fb = { id: uid('fb'), createdAt: nowISO(), date: todayISO(), ...payload };
-  ensure().feedback.unshift(fb);
+  const date = payload.date || todayISO();
+  const list = ensure().feedback;
+  const existingIdx = list.findIndex(
+    (f) => f.citizenId === payload.citizenId && f.date === date,
+  );
+  const fb = {
+    id: existingIdx >= 0 ? list[existingIdx].id : uid('fb'),
+    createdAt: nowISO(),
+    ...payload,
+    date,
+  };
+  if (existingIdx >= 0) list[existingIdx] = fb;
+  else list.unshift(fb);
   pushAudit(actor, 'Submit Feedback', 'feedback', fb.id, `Rating ${fb.rating}`);
   persist();
   return fb;

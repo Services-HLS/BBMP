@@ -48,8 +48,8 @@ export const CITIZEN_NAV = [
   { label: 'Track My Auto', path: '/citizen/track', icon: MapPin, roles: [ROLES.CITIZEN] },
   { label: 'Report a Problem', path: '/citizen/report', icon: Flag, roles: [ROLES.CITIZEN] },
   { label: 'My Reports', path: '/citizen/reports', icon: ClipboardList, roles: [ROLES.CITIZEN] },
-  { label: 'My Block', path: '/citizen/block', icon: Route, roles: [ROLES.CITIZEN] },
-  { label: "Today's Pickup", path: '/citizen/pickup', icon: CalendarCheck, roles: [ROLES.CITIZEN] },
+  { label: 'Collection Calendar', path: '/citizen/calendar', icon: CalendarCheck, roles: [ROLES.CITIZEN] },
+  { label: "Today's Pickup", path: '/citizen/pickup', icon: ClipboardCheck, roles: [ROLES.CITIZEN] },
   { label: 'Settings', path: '/citizen/settings', icon: Settings, roles: [ROLES.CITIZEN] },
 ];
 

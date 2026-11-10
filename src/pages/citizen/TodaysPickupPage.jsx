@@ -13,13 +13,36 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { useTranslation } from '../../hooks/useTranslation';
 import { todayISO, formatDateTime } from '../../utils/date';
+import { formatHouseAddress, getCitizenHouseAddress, hasHouseAddress } from '../../utils/citizenAddress';
+
+const OUTCOMES = {
+  collected: 'collected',
+  missed_by_auto: 'missed_by_auto',
+  garbage_not_kept: 'garbage_not_kept',
+};
+
+const REASON_OPTIONS = {
+  missed_by_auto: [
+    'Auto did not come to our street',
+    'Auto skipped our house',
+    'Auto came very late / after we left',
+    'Other',
+  ],
+  garbage_not_kept: [
+    'We did not keep garbage out',
+    'We were not at home',
+    'Bin was empty / no waste that day',
+    'Other',
+  ],
+};
 
 export default function TodaysPickupPage() {
   const { data, api, loading } = useAppData();
   const { user } = useAuth();
   const { showToast } = useNotifications();
   const { t } = useTranslation();
-  const [collected, setCollected] = useState('yes');
+  const [outcome, setOutcome] = useState(OUTCOMES.collected);
+  const [reason, setReason] = useState('');
   const [rating, setRating] = useState(4);
   const [segregation, setSegregation] = useState('Good');
   const [comment, setComment] = useState('');
@@ -31,13 +54,21 @@ export default function TodaysPickupPage() {
     [data, user?.blockId]
   );
 
+  const houseAddress = useMemo(() => getCitizenHouseAddress(user), [user]);
+
   const todayFeedback = useMemo(
     () => data?.feedback?.find((f) => f.citizenId === user?.id && f.date === todayISO()) || null,
     [data, user?.id]
   );
 
+  const needsReason = outcome === OUTCOMES.missed_by_auto || outcome === OUTCOMES.garbage_not_kept;
+
   const submit = async () => {
-    if (!rating) {
+    if (needsReason && !reason.trim() && !comment.trim()) {
+      showToast(t('reasonRequired'), 'warning');
+      return;
+    }
+    if (outcome === OUTCOMES.collected && !rating) {
       showToast('Please provide a rating', 'warning');
       return;
     }
@@ -47,8 +78,11 @@ export default function TodaysPickupPage() {
         citizenId: user.id,
         wardId: user.wardId,
         blockId: user.blockId,
-        collected: collected === 'yes',
-        rating,
+        date: todayISO(),
+        collected: outcome === OUTCOMES.collected,
+        outcome,
+        reason: needsReason ? (reason === 'Other' ? comment.trim() : reason.trim()) : undefined,
+        rating: outcome === OUTCOMES.collected ? rating : 2,
         segregationFeedback: segregation,
         comment: comment.trim() || undefined,
       }, user.name);
@@ -66,18 +100,18 @@ export default function TodaysPickupPage() {
   const statusAlert = done
     ? (
       <Alert severity="success">
-        Thank you — feedback {done.id} saved ({done.collected ? t('collected') : t('notCollected')}, {done.rating}/5).
+        Thank you — feedback {done.id} saved ({done.outcome || (done.collected ? 'collected' : 'not collected')}).
       </Alert>
     )
     : todayFeedback
       ? (
         <Alert severity="info" icon={false}>
-          Feedback already recorded today ({formatDateTime(todayFeedback.createdAt)}). Submitting again adds another demo record.
+          Feedback already recorded today ({formatDateTime(todayFeedback.createdAt)}). Saving again updates today&apos;s record.
         </Alert>
       )
       : (
         <Alert severity="info" icon={false}>
-          Feedback is stored in local demo storage and linked to your session identity.
+          Tell us if waste was collected, auto missed it, or you did not keep garbage out — with a reason.
         </Alert>
       );
 
@@ -85,10 +119,20 @@ export default function TodaysPickupPage() {
     <PageContainer>
       <PageHeader
         title={t('todaysPickup')}
-        subtitle="Share whether today's collection happened and rate service quality."
+        subtitle="Mark today’s doorstep collection status and reason if not collected."
       />
 
       {statusAlert}
+
+      <SectionCard title={t('myHouseAddress')}>
+        {hasHouseAddress(houseAddress) ? (
+          <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: 'pre-line' }}>
+            {formatHouseAddress(houseAddress)}
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">{t('noAddressYet')}</Typography>
+        )}
+      </SectionCard>
 
       {vehicle && (
         <SectionCard title={vehicle.displayName} subtitle={`${vehicle.autoId} · ${vehicle.driverName || 'Driver'}`}>
@@ -111,41 +155,63 @@ export default function TodaysPickupPage() {
       <SectionCard title="Pickup feedback">
         <Stack spacing={2.5}>
           <FormControl>
-            <FormLabel>Was waste collected today?</FormLabel>
+            <FormLabel>{t('whatHappenedThatDay')}</FormLabel>
             <RadioGroup
-              row
-              value={collected}
-              onChange={(e) => setCollected(e.target.value)}
-              sx={{ gap: { xs: 0, sm: 1 } }}
+              value={outcome}
+              onChange={(e) => { setOutcome(e.target.value); setReason(''); }}
             >
-              <FormControlLabel value="yes" control={<Radio />} label={t('collected')} sx={{ minHeight: 44 }} />
-              <FormControlLabel value="no" control={<Radio />} label={t('notCollected')} sx={{ minHeight: 44 }} />
+              <FormControlLabel value={OUTCOMES.collected} control={<Radio />} label={t('outcomeCollected')} sx={{ minHeight: 44 }} />
+              <FormControlLabel value={OUTCOMES.missed_by_auto} control={<Radio />} label={t('outcomeMissedByAuto')} sx={{ minHeight: 44 }} />
+              <FormControlLabel value={OUTCOMES.garbage_not_kept} control={<Radio />} label={t('outcomeGarbageNotKept')} sx={{ minHeight: 44 }} />
             </RadioGroup>
           </FormControl>
-          <Box>
-            <Typography gutterBottom>{t('rating')}</Typography>
-            <Rating
-              value={rating}
-              onChange={(_, v) => setRating(v || 0)}
-              size="large"
-              sx={{ '& .MuiRating-icon': { fontSize: '1.75rem' } }}
-            />
-          </Box>
-          <FormControl fullWidth>
-            <InputLabel>{t('segregation')}</InputLabel>
-            <Select label={t('segregation')} value={segregation} onChange={(e) => setSegregation(e.target.value)}>
-              <MenuItem value="Good">Good</MenuItem>
-              <MenuItem value="Partial">Partial</MenuItem>
-              <MenuItem value="Needs Improvement">Needs Improvement</MenuItem>
-            </Select>
-          </FormControl>
+
+          {needsReason && (
+            <FormControl fullWidth required>
+              <InputLabel>{t('reason')}</InputLabel>
+              <Select
+                label={t('reason')}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              >
+                {(REASON_OPTIONS[outcome] || []).map((r) => (
+                  <MenuItem key={r} value={r}>{r}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {outcome === OUTCOMES.collected && (
+            <>
+              <Box>
+                <Typography gutterBottom>{t('rating')}</Typography>
+                <Rating
+                  value={rating}
+                  onChange={(_, v) => setRating(v || 0)}
+                  size="large"
+                  sx={{ '& .MuiRating-icon': { fontSize: '1.75rem' } }}
+                />
+              </Box>
+              <FormControl fullWidth>
+                <InputLabel>{t('segregation')}</InputLabel>
+                <Select label={t('segregation')} value={segregation} onChange={(e) => setSegregation(e.target.value)}>
+                  <MenuItem value="Good">Good</MenuItem>
+                  <MenuItem value="Partial">Partial</MenuItem>
+                  <MenuItem value="Needs Improvement">Needs Improvement</MenuItem>
+                </Select>
+              </FormControl>
+            </>
+          )}
+
           <TextField
-            label="Comment"
+            label={needsReason ? t('reasonComment') : t('commentOptional')}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             multiline
             minRows={2}
             fullWidth
+            required={needsReason && (reason === 'Other' || !reason)}
+            helperText={needsReason ? t('reasonRequiredHint') : undefined}
           />
           <Button
             variant="contained"

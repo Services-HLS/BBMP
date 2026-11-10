@@ -1,17 +1,41 @@
-import { useMemo } from 'react';
-import { Alert, Box, Stack, Typography, Chip, Button, Grid } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Stack,
+  Typography,
+  Button,
+  Grid,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Flag, Clock, Truck } from 'lucide-react';
+import { MapPin, Pencil, CalendarCheck } from 'lucide-react';
 import PageContainer from '../../components/common/PageContainer';
 import PageHeader from '../../components/common/PageHeader';
 import SectionCard from '../../components/common/SectionCard';
-import KpiCard from '../../components/common/KpiCard';
-import StatusChip from '../../components/common/StatusChip';
 import LoadingState from '../../components/common/LoadingState';
 import { useAppData } from '../../context/AppDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../hooks/useTranslation';
-import { formatTime, formatDateTime } from '../../utils/date';
+import { saveCitizenProfile } from '../../utils/storage';
+import {
+  EMPTY_HOUSE_ADDRESS,
+  formatHouseAddress,
+  getCitizenHouseAddress,
+  hasHouseAddress,
+} from '../../utils/citizenAddress';
+
+function resolveOutcome(fb) {
+  if (!fb) return null;
+  if (fb.outcome) return fb.outcome;
+  if (fb.noService) return 'no_service';
+  if (fb.collected) return 'collected';
+  return 'missed_by_auto';
+}
 
 export default function CitizenHomePage() {
   const { data, loading } = useAppData();
@@ -19,140 +43,154 @@ export default function CitizenHomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const view = useMemo(() => {
-    if (!data || !user) return null;
-    const ward = data.wards.find((w) => w.id === user.wardId);
-    const block = data.blocks.find((b) => b.id === user.blockId);
-    const vehicle = data.vehicles.find((v) => v.blockId === user.blockId)
-      || data.vehicles.find((v) => v.wardId === user.wardId);
-    const route = data.routes.find((r) => r.id === block?.routeId || r.id === vehicle?.routeId);
-    const alerts = data.notifications.filter((n) => !n.read).slice(0, 3);
-    const stopsAway = vehicle && vehicle.status !== 'Offline'
-      ? Math.max(0, (vehicle.expectedStops || 0) - (vehicle.completedStops || 0))
-      : '—';
-    const wardSpots = data.blackSpots.filter((b) => b.wardId === user.wardId && b.status !== 'Cleared').length;
-    const cleanliness = (vehicle?.coveragePct || 0) >= 90 && wardSpots === 0
-      ? 'Good'
-      : (vehicle?.coveragePct || 0) >= 70
-        ? 'Fair'
-        : 'Needs Attention';
-    return { ward, block, vehicle, route, alerts, stopsAway, cleanliness };
+  const [address, setAddress] = useState(EMPTY_HOUSE_ADDRESS);
+  const [draft, setDraft] = useState(EMPTY_HOUSE_ADDRESS);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setAddress(getCitizenHouseAddress(user));
+  }, [user]);
+
+  const monthSummary = useMemo(() => {
+    const stats = { collected: 0, missed_by_auto: 0, garbage_not_kept: 0 };
+    if (!data?.feedback || !user) return stats;
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    data.feedback
+      .filter((f) => f.citizenId === user.id && String(f.date).startsWith(ym))
+      .forEach((f) => {
+        const o = resolveOutcome(f);
+        if (stats[o] != null) stats[o] += 1;
+      });
+    return stats;
   }, [data, user]);
 
-  if (loading || !data) return <LoadingState />;
-  if (!view) return <LoadingState />;
+  const openEdit = () => {
+    setDraft({ ...EMPTY_HOUSE_ADDRESS, ...address });
+    setDialogOpen(true);
+  };
 
-  const { ward, block, vehicle, route, alerts, stopsAway, cleanliness } = view;
+  const saveAddress = () => {
+    const next = {
+      houseNo: draft.houseNo.trim(),
+      street: draft.street.trim(),
+      area: draft.area.trim(),
+      landmark: draft.landmark.trim(),
+      city: draft.city.trim() || 'Bengaluru',
+      pincode: draft.pincode.trim(),
+    };
+    setAddress(next);
+    if (user?.id) saveCitizenProfile(user.id, { address: next });
+    setDialogOpen(false);
+  };
+
+  if (loading || !data || !user) return <LoadingState />;
 
   return (
     <PageContainer>
       <PageHeader
         title={t('home')}
-        subtitle={`${t('welcomeCitizen')} — ${ward?.name || ''}`}
+        subtitle={`${t('welcomeCitizen')}${user.name ? ` — ${user.name}` : ''}`}
       />
 
       <Alert severity="info" icon={false}>{t('demoNotice')}</Alert>
 
-      <Typography variant="body2" color="text.secondary">
-        {t('ward')}: <strong>{ward?.name || user.wardId}</strong>
-        {' · '}
-        {t('block')}: <strong>{block?.name || user.blockId}</strong>
-        {block?.code ? ` (${block.code})` : ''}
-      </Typography>
+      <SectionCard
+        title={t('myHouseAddress')}
+        action={
+          <Button
+            size="small"
+            variant={hasHouseAddress(address) ? 'outlined' : 'contained'}
+            startIcon={hasHouseAddress(address) ? <Pencil size={14} /> : <MapPin size={14} />}
+            onClick={openEdit}
+          >
+            {hasHouseAddress(address) ? t('editAddress') : t('addAddress')}
+          </Button>
+        }
+      >
+        {hasHouseAddress(address) ? (
+          <Stack spacing={0.5}>
+            <Typography variant="body1" fontWeight={700} sx={{ whiteSpace: 'pre-line' }}>
+              {formatHouseAddress(address)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Doorstep collection for this house address
+            </Typography>
+          </Stack>
+        ) : (
+          <Stack spacing={1}>
+            <Typography variant="body2" color="text.secondary">{t('noAddressYet')}</Typography>
+            <Button variant="contained" startIcon={<MapPin size={16} />} onClick={openEdit} sx={{ alignSelf: 'flex-start' }}>
+              {t('addAddress')}
+            </Button>
+          </Stack>
+        )}
+      </SectionCard>
 
-      <Grid container spacing={1.5}>
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <KpiCard
-            title={t('vehicleStatus')}
-            value={vehicle?.status || '—'}
-            subtitle={vehicle?.displayName}
-            icon={Truck}
-            color="primary"
-            onClick={() => navigate('/citizen/track')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <KpiCard
-            title={t('estimatedArrival')}
-            value={vehicle?.estimatedCompletion ? formatTime(vehicle.estimatedCompletion) : (route?.scheduleEnd || '—')}
-            subtitle={route ? `${route.scheduleStart} – ${route.scheduleEnd}` : undefined}
-            icon={Clock}
-            color="secondary"
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <KpiCard
-            title={t('stopsAway')}
-            value={stopsAway}
-            subtitle={vehicle ? `${vehicle.completedStops}/${vehicle.expectedStops} done` : undefined}
-            icon={MapPin}
-            color="warning"
-            onClick={() => navigate('/citizen/track')}
-          />
-        </Grid>
-        <Grid size={{ xs: 6, sm: 6, md: 3 }}>
-          <KpiCard
-            title={t('cleanliness')}
-            value={cleanliness}
-            icon={Flag}
-            color="success"
-            onClick={() => navigate('/citizen/block')}
-          />
-        </Grid>
-      </Grid>
+      <SectionCard
+        title={t('collectionCalendar')}
+        subtitle={t('collectionCalendarHint')}
+        action={
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<CalendarCheck size={14} />}
+            onClick={() => navigate('/citizen/calendar')}
+          >
+            {t('collectionCalendarNav')}
+          </Button>
+        }
+      >
+        <Stack spacing={1.25}>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Box sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(45,190,106,0.15)' }}>
+              <Typography variant="caption" fontWeight={700}>{t('outcomeCollected')}: {monthSummary.collected}</Typography>
+            </Box>
+            <Box sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(211,47,47,0.12)' }}>
+              <Typography variant="caption" fontWeight={700}>{t('outcomeMissedByAuto')}: {monthSummary.missed_by_auto}</Typography>
+            </Box>
+            <Box sx={{ px: 1, py: 0.5, borderRadius: 1, bgcolor: 'rgba(245,158,11,0.16)' }}>
+              <Typography variant="caption" fontWeight={700}>{t('outcomeGarbageNotKept')}: {monthSummary.garbage_not_kept}</Typography>
+            </Box>
+          </Stack>
+          <Typography variant="body2" color="text.secondary">
+            Open the calendar to see every day and add a reason when collection was missed or garbage was not kept.
+          </Typography>
+        </Stack>
+      </SectionCard>
 
-      <Grid container spacing={1.5}>
-        <Grid size={{ xs: 12, md: 7 }}>
-          <SectionCard title={t('todaysSchedule')}>
-            <Stack spacing={1.25}>
-              <Typography variant="body2">
-                <strong>Route window:</strong> {route?.scheduleStart || '—'} – {route?.scheduleEnd || '—'}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Auto:</strong> {vehicle?.autoId || '—'} · {vehicle?.driverName || '—'}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                <Typography variant="body2"><strong>{t('status')}:</strong></Typography>
-                {vehicle && <StatusChip status={vehicle.status} />}
-              </Stack>
-              <Typography variant="caption" color="text.secondary">
-                {t('latestUpdate')}: {formatDateTime(vehicle?.lastUpdate)}
-              </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>
-                <Button variant="contained" onClick={() => navigate('/citizen/track')}>
-                  {t('trackMyAuto')}
-                </Button>
-                <Button variant="outlined" onClick={() => navigate('/citizen/report')}>
-                  {t('reportProblem')}
-                </Button>
-                <Button variant="text" onClick={() => navigate('/citizen/pickup')}>
-                  {t('todaysPickup')}
-                </Button>
-              </Stack>
-            </Stack>
-          </SectionCard>
-        </Grid>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <SectionCard title={t('recentAlerts')}>
-            {alerts.length === 0 && (
-              <Typography variant="body2" color="text.secondary">No unread alerts.</Typography>
-            )}
-            <Stack spacing={1.5}>
-              {alerts.map((a) => (
-                <Box key={a.id}>
-                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                    <Chip size="small" label={a.priority} />
-                    <Typography variant="body2" fontWeight={600}>{a.title}</Typography>
-                  </Stack>
-                  <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.35 }}>
-                    {a.message}
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          </SectionCard>
-        </Grid>
-      </Grid>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Button variant="contained" onClick={() => navigate('/citizen/track')}>{t('trackMyAuto')}</Button>
+        <Button variant="outlined" onClick={() => navigate('/citizen/report')}>{t('reportProblem')}</Button>
+        <Button variant="text" onClick={() => navigate('/citizen/pickup')}>{t('todaysPickup')}</Button>
+      </Stack>
+
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{hasHouseAddress(address) ? t('editAddress') : t('addAddress')}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1.5} sx={{ pt: 1 }}>
+            <TextField label={t('houseNo')} value={draft.houseNo} onChange={(e) => setDraft((d) => ({ ...d, houseNo: e.target.value }))} fullWidth required />
+            <TextField label={t('street')} value={draft.street} onChange={(e) => setDraft((d) => ({ ...d, street: e.target.value }))} fullWidth required />
+            <TextField label={t('area')} value={draft.area} onChange={(e) => setDraft((d) => ({ ...d, area: e.target.value }))} fullWidth required />
+            <TextField label={t('landmark')} value={draft.landmark} onChange={(e) => setDraft((d) => ({ ...d, landmark: e.target.value }))} fullWidth />
+            <Grid container spacing={1.5}>
+              <Grid size={{ xs: 12, sm: 7 }}>
+                <TextField label={t('city')} value={draft.city} onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))} fullWidth />
+              </Grid>
+              <Grid size={{ xs: 12, sm: 5 }}>
+                <TextField label={t('pincode')} value={draft.pincode} onChange={(e) => setDraft((d) => ({ ...d, pincode: e.target.value }))} fullWidth inputProps={{ inputMode: 'numeric', maxLength: 6 }} />
+              </Grid>
+            </Grid>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>{t('cancel')}</Button>
+          <Button variant="contained" onClick={saveAddress} disabled={!draft.houseNo.trim() || !draft.street.trim() || !draft.area.trim()}>
+            {t('saveAddress')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageContainer>
   );
 }
