@@ -177,7 +177,7 @@ export default function SplashIntro({ children }) {
                     color: 'rgba(220,230,236,0.8)',
                   }}
                 >
-                  Solid Waste Management & Civic Operations
+                  Bengaluru Solid Waste Management Limited
                 </Typography>
               </Box>
             </Box>
