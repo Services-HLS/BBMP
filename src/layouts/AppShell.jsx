@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import AppLogo from '../components/brand/AppLogo';
+import GovBrandMarks from '../components/brand/GovBrandMarks';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useThemeMode } from '../context/ThemeContext';
@@ -396,6 +397,17 @@ export default function AppShell() {
 
           <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', mr: 0.5, minWidth: 0, flexShrink: 1 }}>
             <AppLogo compact showEnv={false} />
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              mr: { xs: 0.25, sm: 0.75 },
+              flexShrink: 0,
+            }}
+          >
+            <GovBrandMarks size={isMobile ? 28 : 34} gap={0.75} dense />
           </Box>
 
           <Typography

@@ -27,6 +27,7 @@ import {
   Truck,
 } from 'lucide-react';
 import AppLogo from '../components/brand/AppLogo';
+import GovBrandMarks from '../components/brand/GovBrandMarks';
 import { useAuth } from '../context/AuthContext';
 import {
   DEMO_USERS,
@@ -172,6 +173,17 @@ export default function LoginPage() {
         }}
       >
         <PanelBackdrop />
+        {/* Gov seals pinned to the far right end of the left panel */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: { sm: 18, md: 20, lg: 22 },
+            right: { sm: 16, md: 20, lg: 24 },
+            zIndex: 3,
+          }}
+        >
+          <GovBrandMarks size={84} gap={1.75} />
+        </Box>
         <Box
           sx={{
             position: 'relative',
@@ -181,17 +193,18 @@ export default function LoginPage() {
             flexDirection: 'column',
             justifyContent: { lg: 'space-between' },
             gap: { xs: 1, lg: 1.75 },
-            maxWidth: { lg: 640, xl: 700 },
+            maxWidth: { lg: '100%', xl: '100%' },
             minHeight: 0,
             overflow: 'hidden',
+            pr: { sm: '200px', md: '210px', lg: '220px' },
           }}
         >
-          <Box sx={{ flexShrink: 0 }}>
+          <Box sx={{ flexShrink: 0, width: '100%', maxWidth: '100%' }}>
             <AppLogo
               variant="dark"
               showEnv
               markSize={64}
-              subtitle="Solid Waste Management & Civic Operations"
+              subtitle="Bengaluru Solid Waste Management Limited"
             />
 
             <Typography
@@ -345,11 +358,16 @@ export default function LoginPage() {
         }}
       >
         <Box sx={{ display: { xs: 'block', sm: 'none' }, mb: 2 }}>
-          <AppLogo
-            showEnv
-            markSize={52}
-            subtitle="Solid Waste Management"
-          />
+          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1.25}>
+            <Box sx={{ minWidth: 0, flex: 1, pr: 0.5 }}>
+              <AppLogo
+                showEnv
+                markSize={52}
+                subtitle="Bengaluru Solid Waste Management Limited"
+              />
+            </Box>
+            <GovBrandMarks size={52} gap={0.85} />
+          </Stack>
         </Box>
         <Stack
           direction="row"

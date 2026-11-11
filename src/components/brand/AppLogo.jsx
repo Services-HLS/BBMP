@@ -90,18 +90,22 @@ export default function AppLogo({
           </Typography>
           {showEnv ? (
             <Typography
-              noWrap
               sx={{
                 display: 'block',
                 mt: isHero ? 0.55 : 0.35,
                 fontFamily: language === 'kn'
                   ? '"Noto Sans Kannada", "Plus Jakarta Sans", "Source Sans 3", sans-serif'
                   : '"Plus Jakarta Sans", "Source Sans 3", "Segoe UI", sans-serif',
-                fontSize: isHero ? { xs: '0.78rem', sm: '0.88rem' } : '0.65rem',
-                fontWeight: 600,
+                fontSize: isHero ? { xs: '0.72rem', sm: '0.8rem' } : '0.65rem',
+                fontWeight: 700,
                 lineHeight: 1.3,
-                letterSpacing: '0.01em',
-                color: isDark ? 'rgba(220,230,236,0.82)' : colors.textSecondary,
+                letterSpacing: '0.02em',
+                textTransform: resolvedSubtitle?.toLowerCase().includes('bengaluru solid waste')
+                  ? 'uppercase'
+                  : 'none',
+                color: isDark ? 'rgba(220,230,236,0.88)' : colors.textSecondary,
+                whiteSpace: 'normal',
+                maxWidth: isHero ? { xs: '100%', sm: 340, md: 420 } : '100%',
               }}
             >
               {resolvedSubtitle}
