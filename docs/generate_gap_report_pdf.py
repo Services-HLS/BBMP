@@ -18,7 +18,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-OUT = Path(__file__).with_name("BBMP_Presentation_vs_App_Gap_Report.pdf")
+OUT = Path(__file__).with_name("BSWML_Presentation_vs_App_Gap_Report.pdf")
 
 NAVY = colors.HexColor("#10283C")
 LEAF = colors.HexColor("#2DBE6A")
@@ -199,7 +199,7 @@ def add_header_footer(canvas, doc):
     canvas.line(16 * mm, A4[1] - 12 * mm, A4[0] - 16 * mm, A4[1] - 12 * mm)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(MUTED)
-    canvas.drawString(16 * mm, A4[1] - 10 * mm, "BBMP One App — Presentation vs Application Gap Report")
+    canvas.drawString(16 * mm, A4[1] - 10 * mm, "BSWML One App — Presentation vs Application Gap Report")
     canvas.drawRightString(A4[0] - 16 * mm, A4[1] - 10 * mm, "Documentation")
     canvas.setStrokeColor(BORDER)
     canvas.setLineWidth(0.5)
@@ -217,18 +217,18 @@ def build():
         rightMargin=16 * mm,
         topMargin=18 * mm,
         bottomMargin=16 * mm,
-        title="BBMP Presentation vs Application Gap Report",
-        author="BBMP One App Documentation",
+        title="BSWML Presentation vs Application Gap Report",
+        author="BSWML One App Documentation",
     )
 
     story = []
 
     # Cover / intro (continuous — no big empty gaps)
-    story.append(Paragraph("BBMP One App", s["cover_title"]))
+    story.append(Paragraph("BSWML One App", s["cover_title"]))
     story.append(Paragraph("Presentation vs Application Gap Report", s["cover_title"]))
     story.append(Spacer(1, 4))
-    story.append(Paragraph("Source: public/BBMP_One_App_SWM_Presentation.pdf (33 pages, November 2026)", s["cover_sub"]))
-    story.append(Paragraph("Application: BBMP One App frontend demo (React / Vite)", s["cover_sub"]))
+    story.append(Paragraph("Source: public/BSWML_One_App_SWM_Presentation.pdf (33 pages, November 2026)", s["cover_sub"]))
+    story.append(Paragraph("Application: BSWML One App frontend demo (React / Vite)", s["cover_sub"]))
     story.append(Paragraph("Review date: 10 November 2026 · Comparison only — application code not modified", s["cover_sub"]))
     story.append(Spacer(1, 6))
 
@@ -246,7 +246,7 @@ def build():
         "screen-level modules (ops dashboard, vehicles, routes, coverage, DWC, complaints, sweeping/"
         "black spots, dashcam events, scorecards, reports, AI assistant, impact, and a full citizen "
         "shell). Behaviour is driven by mockApi.js + seed.js + localStorage, with simulated GPS, "
-        "seeded AI events, and a rule-based assistant — not live BBMP systems.",
+        "seeded AI events, and a rule-based assistant — not live BSWML systems.",
         s["body"],
     ))
     story.append(table(
@@ -290,7 +290,7 @@ def build():
         ["Limitation", "Where it shows up"],
         [
             ["localStorage persistence", "src/utils/storage.js; mockApi persist"],
-            ["No backend / no BBMP APIs", "Entire data plane is mockApi.js"],
+            ["No backend / no BSWML APIs", "Entire data plane is mockApi.js"],
             ["Mock / simulated GPS", "refreshVehicleLocation random walk; UI warns not live GPS"],
             ["Proposal scale ≠ demo scale", "Seed uses small subset (~8 wards, ~28 autos); PROPOSAL_SCALE is reference only"],
             ["Auth = demo username/password", "AuthContext + DEMO_USERS — no OTP"],
@@ -320,7 +320,7 @@ def build():
             ["2", "GPS trackers (SIM, multi-GNSS, 10–20 s)", "MISSING", "Simulated coords only"],
             ["3", "AI dashcams (rotated, 4G, blur)", "PARTIAL", "DashcamPage + seed events; no hardware/video"],
             ["4", "Muster app &amp; attendance", "MISSING", "Muster entities in seed only"],
-            ["5", "Transmission to cloud / BBMP systems", "MISSING", "Browser-local only"],
+            ["5", "Transmission to cloud / BSWML systems", "MISSING", "Browser-local only"],
             ["6", "Central overnight AI analytics", "MISSING", "Pre-seeded detections"],
         ],
         [10 * mm, 70 * mm, 22 * mm, 68 * mm],
@@ -515,7 +515,7 @@ def build():
         "OTP authentication",
         "Dedicated helpdesk channel/staffing UI",
         "Monthly 2–5% independent audit sampling for payment",
-        "Production privacy/security stack (DPDP retention, CV blur pipeline, VAPT, BBMP DC hosting)",
+        "Production privacy/security stack (DPDP retention, CV blur pipeline, VAPT, BSWML DC hosting)",
         "Also absent: real push notifications, weighbridge tolerances, payment dispute settlement, continuous video storage",
     ], s))
 
@@ -525,7 +525,7 @@ def build():
         ["Layer (PDF)", "Gap vs application"],
         [
             ["Field capture", "No GPS devices, dashcams, or muster clients — seed + UI simulation"],
-            ["Transmission", "No SIM/4G ingest, footage sync, or BBMP connectors"],
+            ["Transmission", "No SIM/4G ingest, footage sync, or BSWML connectors"],
             ["Central platform", "No server, DB, queues, object storage, AI inference, geo services"],
             ["Realtime", "No WebSocket/MQTT; live = button-driven simulated location"],
             ["AI", "No CV model; detections are fixtures; assistant is rule-based"],

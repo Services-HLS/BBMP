@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 export default function PageContainer({ children, sx, dense = false, className }) {
   return (
     <Box
-      className={['bbmp-page', className].filter(Boolean).join(' ')}
+      className={['bswml-page', className].filter(Boolean).join(' ')}
       sx={{
         width: '100%',
         maxWidth: '100%',

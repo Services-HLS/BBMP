@@ -44,7 +44,7 @@ export default function ImpactPage() {
     <PageContainer>
       <PageHeader title="Impact Dashboard" subtitle="Sustainability and service-outcome estimates from illustrative sample records." />
       <Alert severity="info" icon={false}>
-        Illustrative estimate — diversion {assumptions.diversionRate * 100}%, CO₂e {assumptions.co2ePerTonneAvoided} t/t, compost {assumptions.compostYieldPerTonneWet}. Not official BBMP results.
+        Illustrative estimate — diversion {assumptions.diversionRate * 100}%, CO₂e {assumptions.co2ePerTonneAvoided} t/t, compost {assumptions.compostYieldPerTonneWet}. Not official BSWML results.
       </Alert>
 
       <FilterBar>

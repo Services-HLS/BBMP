@@ -28,7 +28,7 @@ export default function WasteAutoSvg({ sx, ...rest }) {
       <circle cx="210" cy="108" r="8" fill="#9AA5B1" />
       {/* headlight */}
       <circle cx="228" cy="82" r="4" fill="#FFF3C4" />
-      {/* BBMP stripe */}
+      {/* BSWML stripe */}
       <rect x="148" y="88" width="56" height="6" rx="2" fill="#143A4F" opacity="0.35" />
     </Box>
   );

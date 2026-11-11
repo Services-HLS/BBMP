@@ -322,7 +322,7 @@ export default function ScorecardsPage() {
     <PageContainer>
       <PageHeader
         title="Performance Scorecards"
-        subtitle="Proposed 100-point daily scoring model for demonstration — not approved BBMP payment policy."
+        subtitle="Proposed 100-point daily scoring model for demonstration — not approved BSWML payment policy."
         actions={
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} useFlexGap flexWrap="wrap">
             {data.scoreConfig?.shadowRunMode && (
@@ -343,7 +343,7 @@ export default function ScorecardsPage() {
         }
       />
       <Alert severity="info" icon={false}>
-        Demo scoring only — not BBMP payment policy. Shadow-run {data.scoreConfig?.shadowRunMode ? 'ON' : 'OFF'} · Bands: 85–100 full · 70–84 reduced · &lt;70 review.
+        Demo scoring only — not BSWML payment policy. Shadow-run {data.scoreConfig?.shadowRunMode ? 'ON' : 'OFF'} · Bands: 85–100 full · 70–84 reduced · &lt;70 review.
         {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 

@@ -95,7 +95,7 @@ export function SectionHeader({ title, action }) {
       spacing={1}
       sx={{ mb: 1.5 }}
     >
-      <Typography className="bbmp-section-title" component="h2" sx={{ m: 0 }}>
+      <Typography className="bswml-section-title" component="h2" sx={{ m: 0 }}>
         {title}
       </Typography>
       {action}

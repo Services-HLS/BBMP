@@ -4,7 +4,7 @@ import { colors } from '../../theme/tokens';
 import { useTranslation } from '../../hooks/useTranslation';
 
 /**
- * Brand lockup: Eco City Leaf Emblem + "BBMP" + "One App".
+ * Brand lockup: Eco City Leaf Emblem + "BSWML" + "One App".
  */
 export default function AppLogo({
   compact = false,
@@ -74,7 +74,7 @@ export default function AppLogo({
                     textShadow: isDark ? '0 1px 3px rgba(0,0,0,0.4)' : 'none',
                   }}
                 >
-                  BBMP
+                  BSWML
                 </Box>
                 <Box
                   component="span"

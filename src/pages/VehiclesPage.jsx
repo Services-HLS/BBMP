@@ -58,7 +58,7 @@ export default function VehiclesPage() {
     <PageContainer>
       <PageHeader
         title="Live Vehicle Tracking"
-        subtitle="Simulated auto locations for demonstration. Not real-time BBMP fleet telemetry."
+        subtitle="Simulated auto locations for demonstration. Not real-time BSWML fleet telemetry."
         breadcrumbs={[{ label: 'Home', to: '/dashboard' }, { label: 'Vehicles' }]}
       />
       <Alert severity="info" icon={false}>

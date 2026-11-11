@@ -1,7 +1,7 @@
-# BBMP One App — Presentation vs Application Gap Report
+# BSWML One App — Presentation vs Application Gap Report
 
-**Source document:** `public/BBMP_One_App_SWM_Presentation.pdf` (33 pages, “One App for Bengaluru”, November 2026)  
-**Application:** BBMP One App frontend demo (`src/`)  
+**Source document:** `public/BSWML_One_App_SWM_Presentation.pdf` (33 pages, “One App for Bengaluru”, November 2026)  
+**Application:** BSWML One App frontend demo (`src/`)  
 **Review date:** 10 November 2026  
 **Scope:** Comparison only — **no application code was changed** for this report.
 
@@ -11,7 +11,7 @@
 
 The presentation describes a **city-scale production platform**: SIM GPS on 4,994 autos, 238 AI dashcams, muster-app integration, multi-role field apps, SLA escalation to Central Command, GPS-pin proof of closure, performance-linked vendor payment, and a bilingual citizen experience.
 
-The codebase is a **credible interactive frontend demo** of that vision. It implements most **screen-level modules** (ops dashboard, vehicles, routes, coverage, DWC, complaints, sweeping/black spots, dashcam events, scorecards, reports, AI assistant, impact, and a full citizen shell). Almost all behaviour is driven by **`src/services/mockApi.js` + `src/data/seed.js` + `localStorage`**, with **simulated GPS**, **seeded “AI” events**, and a **rule-based** assistant — not live BBMP systems.
+The codebase is a **credible interactive frontend demo** of that vision. It implements most **screen-level modules** (ops dashboard, vehicles, routes, coverage, DWC, complaints, sweeping/black spots, dashcam events, scorecards, reports, AI assistant, impact, and a full citizen shell). Almost all behaviour is driven by **`src/services/mockApi.js` + `src/data/seed.js` + `localStorage`**, with **simulated GPS**, **seeded “AI” events**, and a **rule-based** assistant — not live BSWML systems.
 
 | Metric | Value |
 |--------|------:|
@@ -42,7 +42,7 @@ The codebase is a **credible interactive frontend demo** of that vision. It impl
 | Limitation | Where it shows up |
 |------------|-------------------|
 | **localStorage persistence** | `src/utils/storage.js`; `mockApi` persist |
-| **No backend / no BBMP APIs** | Entire data plane is `mockApi.js` |
+| **No backend / no BSWML APIs** | Entire data plane is `mockApi.js` |
 | **Mock / simulated GPS** | `refreshVehicleLocation` random walk; UI warns “not live GPS” |
 | **Proposal scale ≠ demo scale** | Seed uses a small subset (e.g. ~8 wards, ~28 autos); `PROPOSAL_SCALE` is reference only |
 | **Auth = demo username/password** | `AuthContext` + `DEMO_USERS` — **no OTP** |
@@ -70,7 +70,7 @@ The codebase is a **credible interactive frontend demo** of that vision. It impl
 | 2 | Field capture: GPS trackers (SIM, multi-GNSS, 10–20 s) | **MISSING** | Simulated coords only |
 | 3 | Field capture: AI dashcams (rotated, 4G, blur) | **PARTIAL** | `DashcamPage` + seed events; no hardware/video |
 | 4 | Muster app & attendance integration | **MISSING** | Muster entities in seed only; no muster UI |
-| 5 | Transmission to central cloud / BBMP systems | **MISSING** | Browser-local only |
+| 5 | Transmission to central cloud / BSWML systems | **MISSING** | Browser-local only |
 | 6 | Central processing & overnight AI analytics | **MISSING** | Pre-seeded detections |
 
 ### 4.2 GPS tracker workflow (PDF pp. 6, 21, 24)
@@ -232,7 +232,7 @@ Usable end-to-end against local seed data:
 9. OTP authentication  
 10. Dedicated helpdesk channel/staffing UI  
 11. Monthly 2–5% independent audit sampling for payment  
-12. Production privacy/security stack as described in the proposal (DPDP retention, CV blur pipeline, VAPT, BBMP DC hosting)
+12. Production privacy/security stack as described in the proposal (DPDP retention, CV blur pipeline, VAPT, BSWML DC hosting)
 
 Also absent as first-class products: real push notifications, weighbridge tolerances, payment dispute settlement, continuous video storage.
 
@@ -243,7 +243,7 @@ Also absent as first-class products: real push notifications, weighbridge tolera
 | Layer (PDF) | Gap vs application |
 |-------------|--------------------|
 | **Field capture** | No GPS devices, dashcams, or muster clients — seed + UI simulation |
-| **Transmission** | No SIM/4G ingest, footage sync, or BBMP connectors |
+| **Transmission** | No SIM/4G ingest, footage sync, or BSWML connectors |
 | **Central platform** | No server, DB, queues, object storage, AI inference, geo services |
 | **Realtime** | No WebSocket/MQTT; “live” = button-driven simulated location |
 | **AI** | No CV model; detections are fixtures; assistant is rule-based |

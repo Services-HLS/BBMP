@@ -28,7 +28,7 @@ export default function LoadingSpinner({ size = 56 }) {
           borderColor: 'rgba(21, 52, 75, 0.12)',
           borderTopColor: '#2DBE6A',
           borderRightColor: '#143A4F',
-          animation: 'bbmp-spin 0.85s linear infinite',
+          animation: 'bswml-spin 0.85s linear infinite',
         }}
       />
       <Box
@@ -39,12 +39,12 @@ export default function LoadingSpinner({ size = 56 }) {
           border: '2px solid transparent',
           borderBottomColor: 'rgba(76, 214, 138, 0.9)',
           borderLeftColor: 'rgba(45, 190, 106, 0.45)',
-          animation: 'bbmp-spin 1.35s linear infinite reverse',
+          animation: 'bswml-spin 1.35s linear infinite reverse',
         }}
       />
       <Box
         sx={{
-          animation: 'bbmp-pulse 1.4s ease-in-out infinite',
+          animation: 'bswml-pulse 1.4s ease-in-out infinite',
           display: 'grid',
           placeItems: 'center',
         }}

@@ -387,7 +387,7 @@ export default function ComplaintsPage() {
 
   const handleExport = () => {
     exportTableCsv(
-      'bbmp-complaints-sample.csv',
+      'bswml-complaints-sample.csv',
       filtered,
       [
         { header: 'ID', accessor: 'id' },

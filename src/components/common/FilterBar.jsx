@@ -10,7 +10,7 @@ export default function FilterBar({ children, endActions, sx, className }) {
       spacing={1.5}
       alignItems={{ xs: 'stretch', sm: 'center' }}
       justifyContent="space-between"
-      className={['bbmp-filter-bar', className].filter(Boolean).join(' ')}
+      className={['bswml-filter-bar', className].filter(Boolean).join(' ')}
       sx={{
         p: { xs: 1.25, sm: 1.5 },
         borderRadius: 2.5,

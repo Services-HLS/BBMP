@@ -266,7 +266,7 @@ export default function ReportsPage() {
             <Button
               startIcon={<Download size={16} />}
               variant="outlined"
-              onClick={() => exportTableCsv(`bbmp-report-${todayISO()}.csv`, report.chart, [
+              onClick={() => exportTableCsv(`bswml-report-${todayISO()}.csv`, report.chart, [
                 { header: 'Metric', accessor: 'name' },
                 { header: 'Value', accessor: 'value' },
               ])}

@@ -1,6 +1,6 @@
 {
-  "appId": "com.bbmp.oneapp.demo",
-  "appName": "BBMP One App Demo",
+  "appId": "com.bswml.oneapp.demo",
+  "appName": "BSWML One App Demo",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

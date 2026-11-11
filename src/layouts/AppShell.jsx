@@ -24,7 +24,7 @@ import {
 } from '../constants';
 import { colors } from '../theme/tokens';
 
-const DASHCAM_NAV_KEY = 'bbmp_sidebar_dashcam_open';
+const DASHCAM_NAV_KEY = 'bswml_sidebar_dashcam_open';
 
 export default function AppShell() {
   const theme = useTheme();

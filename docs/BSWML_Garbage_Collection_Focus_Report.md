@@ -1,6 +1,6 @@
-# BBMP One App — Garbage Collection Focus Report
+# BSWML One App — Garbage Collection Focus Report
 
-**Source:** `public/BBMP_One_App_SWM_Presentation.pdf` (Part 1 — Waste Collection)  
+**Source:** `public/BSWML_One_App_SWM_Presentation.pdf` (Part 1 — Waste Collection)  
 **Scope:** Garbage collection only — **pothole / road monitoring excluded**  
 **Review date:** 10 November 2026  
 **Note:** Comparison only. **Application code was not changed.**
@@ -86,7 +86,7 @@ stops vs normal, houses covered, DWC visit, route time, speed alerts, stoppages,
 | 5 | Black spots | Register + status | Optional: link “collected or not” to auto visit (today: register only) |
 | 6 | Citizen track / ETA / alerts | UI + prefs | Real location + push notifications |
 | 7 | Score / payment bands | Shown; shadow-run | Keep as proposed until real payment integration |
-| 8 | Dashboard “Command” | One filtered dashboard | Split ward / corporation views if BBMP needs it |
+| 8 | Dashboard “Command” | One filtered dashboard | Split ward / corporation views if BSWML needs it |
 | 9 | Dashcam page | Mostly road AI demo | If GC-only: keep only waste-useful events (route deviation, stoppage, illegal dumping) — hide/retire pothole |
 | 10 | Sweeping page | Sweeping + black spots + **pothole/debris tab** | For GC focus: keep sweeping/black spots; drop or hide pothole/debris tab |
 | 11 | Complaint categories | Includes **Pothole** / **Debris** | For GC focus: remove or hide those categories from citizen/ops forms |
@@ -103,7 +103,7 @@ stops vs normal, houses covered, DWC visit, route time, speed alerts, stoppages,
 | 3 | Muster check-in (driver + auto + tracker at 6:30) | No (seed only) | **Add** |
 | 4 | Driver / field staff collection app | No | **Add** |
 | 5 | OTP login | No | **Add** (if required for citizens/officers) |
-| 6 | Dedicated helpdesk intake (beyond app) | No | **Add** if BBMP needs it |
+| 6 | Dedicated helpdesk intake (beyond app) | No | **Add** if BSWML needs it |
 | 7 | Proof rules for missed pickup close (GPS trail / same-spot photo) | Weak | **Add / strengthen** |
 | 8 | Camera-day cross-check of houses covered | No | **Add** (optional pilot) |
 | 9 | Monthly audit sample for payment (2–5%) | No | **Add** when payment goes live |
@@ -134,7 +134,7 @@ These are **road / pothole** oriented. For a garbage-collection-only product you
 |----------|--------|
 | Are core **garbage collection UI modules** there? | **Yes** — tracking, routes, coverage, DWC, complaints, citizen track/report/pickup, scorecards, reports |
 | Is it enough for a **demo / proposal walkthrough** of waste collection? | **Yes** |
-| Is it enough for **live BBMP garbage operations**? | **No** — still mock GPS, localStorage, no muster/driver backend |
+| Is it enough for **live BSWML garbage operations**? | **No** — still mock GPS, localStorage, no muster/driver backend |
 | Must you **add** something for GC focus? | **Yes, for production** — see §5 (GPS, muster, driver app, proof, notifications) |
 | Must you **modify** something for GC-only focus? | **Yes, if you want to drop potholes** — see §4 items 9–12 and §6 (hide pothole categories/tabs) |
 

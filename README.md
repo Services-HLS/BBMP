@@ -1,6 +1,6 @@
-# BBMP One App — Smart Solid Waste Management (Frontend Demo)
+# BSWML One App — Smart Solid Waste Management (Frontend Demo)
 
-Polished React frontend prototype for the **BBMP One App** solid waste management proposal. Uses realistic sample data and `localStorage` persistence. **Not** an official BBMP application and **not** connected to live vehicles, citizens, or BBMP APIs.
+Polished React frontend prototype for the **BSWML One App** solid waste management proposal. Uses realistic sample data and `localStorage` persistence. **Not** an official BSWML application and **not** connected to live vehicles, citizens, or BSWML APIs.
 
 ## Quick start
 
@@ -25,7 +25,7 @@ Sign in with username and password. Expand **Show demo credentials** on the logi
 |------|----------|----------|----------|
 | Citizen | `citizen` | `citizen123` | Citizen Portal |
 | Field Supervisor / JHI | `supervisor` | `supervisor123` | Operations Dashboard |
-| BBMP Administrator | `admin` | `admin123` | Full admin navigation |
+| BSWML Administrator | `admin` | `admin123` | Full admin navigation |
 
 One role per session — logout first to sign in as another role. Session is stored in `localStorage` and survives refresh.
 
@@ -104,4 +104,4 @@ Do not request camera/location/notification permissions until the user explicitl
 
 ## Licence / disclaimer
 
-Frontend prototype for demonstration and product exploration only. Do not present as an officially deployed BBMP system.
+Frontend prototype for demonstration and product exploration only. Do not present as an officially deployed BSWML system.

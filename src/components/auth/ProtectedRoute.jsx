@@ -7,7 +7,7 @@ export default function ProtectedRoute({ children, roles }) {
   const location = useLocation();
 
   if (!ready) {
-    return <LoadingState fullPage label="Starting BBMP One App…" />;
+    return <LoadingState fullPage label="Starting BSWML One App…" />;
   }
 
   if (!isAuthenticated) {

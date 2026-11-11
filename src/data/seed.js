@@ -809,7 +809,7 @@ export function createSeedData() {
       shadowRunMonths: 2,
     },
     settings: {
-      appName: 'BBMP One App',
+      appName: 'BSWML One App',
       sampleDataIndicator: true,
     },
   };

@@ -911,7 +911,7 @@ export async function askAssistant(question, role = 'admin', user = null) {
     const cov = Math.round((done / exp) * 100);
     const delayed = vs.filter((v) => v.status === 'Delayed').length;
     const openCmp = data.complaints.filter((c) => c.wardId === 'ward-112' && c.status !== 'Resolved').length;
-    answer = `Ward 112 (Indiranagar) demo coverage is ${cov}%. ${delayed} delayed auto(s), ${openCmp} open complaint(s). Coverage drops in the demo are typically explained by delayed/offline vehicles and missed stops — not live BBMP telemetry.`;
+    answer = `Ward 112 (Indiranagar) demo coverage is ${cov}%. ${delayed} delayed auto(s), ${openCmp} open complaint(s). Coverage drops in the demo are typically explained by delayed/offline vehicles and missed stops — not live BSWML telemetry.`;
     table = vs.map((v) => ({ auto: v.displayName, status: v.status, coverage: `${v.coveragePct}%` }));
     links.push({ label: 'Dashboard', path: '/dashboard' });
   } else if (q.includes('overdue') || (q.includes('complaint') && q.includes('ward'))) {
@@ -958,7 +958,7 @@ export async function askAssistant(question, role = 'admin', user = null) {
     answer,
     table,
     links,
-    disclaimer: 'Answers are generated locally from demo sample data — not from a connected AI service or live BBMP systems.',
+    disclaimer: 'Answers are generated locally from demo sample data — not from a connected AI service or live BSWML systems.',
     at: nowISO(),
   };
 }

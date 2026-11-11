@@ -71,7 +71,7 @@ export default function FeedbackPage() {
             accessor: 'comment',
             hideOnMobile: true,
             render: (r) => (
-              <span className="bbmp-truncate" title={r.comment || ''} style={{ display: 'inline-block', maxWidth: 220 }}>
+              <span className="bswml-truncate" title={r.comment || ''} style={{ display: 'inline-block', maxWidth: 220 }}>
                 {r.comment || '—'}
               </span>
             ),

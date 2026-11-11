@@ -3,7 +3,7 @@ import { Box, Typography, Fade } from '@mui/material';
 import CivicMark from '../brand/CivicMark';
 import { colors } from '../../theme/tokens';
 
-const SPLASH_KEY = 'bbmp-splash-seen-v8';
+const SPLASH_KEY = 'bswml-splash-seen-v8';
 const DURATION_MS = 6000;
 const STREET_SRC = '/splash-street.jpg?v=2';
 const AUTO_SRC = '/splash-auto-cutout.png?v=4';
@@ -25,7 +25,7 @@ function RoadAuto() {
   return (
     <Box
       aria-hidden
-      className="bbmp-auto-drive"
+      className="bswml-auto-drive"
       sx={{
         position: 'absolute',
         left: 0,
@@ -56,7 +56,7 @@ function RealisticBag({ left, delay, src, width, bottom }) {
   return (
     <Box
       aria-hidden
-      className="bbmp-bag-collect"
+      className="bswml-bag-collect"
       sx={{
         position: 'absolute',
         left,
@@ -119,7 +119,7 @@ export default function SplashIntro({ children }) {
       <Fade in={visible} timeout={420}>
         <Box
           role="dialog"
-          aria-label="BBMP One App starting"
+          aria-label="BSWML One App starting"
           aria-busy="true"
           sx={{
             position: 'fixed',
@@ -145,7 +145,7 @@ export default function SplashIntro({ children }) {
               gap: 0.65,
               background:
                 'linear-gradient(180deg, rgba(8,18,28,0.88) 0%, rgba(8,18,28,0.35) 85%, transparent 100%)',
-              animation: 'bbmp-brand-in 0.7s ease-out both',
+              animation: 'bswml-brand-in 0.7s ease-out both',
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.6 } }}>
@@ -163,7 +163,7 @@ export default function SplashIntro({ children }) {
                   }}
                 >
                   <Box component="span" sx={{ color: '#fff' }}>
-                    BBMP
+                    BSWML
                   </Box>
                   <Box component="span" sx={{ color: colors.leafBright }}>
                     One App
@@ -209,7 +209,7 @@ export default function SplashIntro({ children }) {
                   width: '100%',
                   bgcolor: colors.leaf,
                   transformOrigin: 'left center',
-                  animation: 'bbmp-splash-progress 6s linear both',
+                  animation: 'bswml-splash-progress 6s linear both',
                 }}
               />
             </Box>
@@ -226,7 +226,7 @@ export default function SplashIntro({ children }) {
                 `,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center bottom',
-                animation: 'bbmp-splash-ken 6s ease-out both',
+                animation: 'bswml-splash-ken 6s ease-out both',
               }}
             />
 

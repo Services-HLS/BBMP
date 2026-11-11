@@ -8,7 +8,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-OUT = Path(__file__).with_name("BBMP_Modules_Present_vs_Missing.pdf")
+OUT = Path(__file__).with_name("BSWML_Modules_Present_vs_Missing.pdf")
 
 NAVY = colors.HexColor("#10283C")
 LEAF = colors.HexColor("#2DBE6A")
@@ -71,7 +71,7 @@ def build():
         canvas.line(16 * mm, A4[1] - 12 * mm, A4[0] - 16 * mm, A4[1] - 12 * mm)
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(MUTED)
-        canvas.drawString(16 * mm, A4[1] - 10 * mm, "BBMP One App — Modules Present vs Missing")
+        canvas.drawString(16 * mm, A4[1] - 10 * mm, "BSWML One App — Modules Present vs Missing")
         canvas.setStrokeColor(BORDER)
         canvas.setLineWidth(0.5)
         canvas.line(16 * mm, 12 * mm, A4[0] - 16 * mm, 12 * mm)
@@ -82,15 +82,15 @@ def build():
         str(OUT), pagesize=A4,
         leftMargin=16 * mm, rightMargin=16 * mm,
         topMargin=18 * mm, bottomMargin=16 * mm,
-        title="BBMP Modules Present vs Missing",
-        author="BBMP One App Documentation",
+        title="BSWML Modules Present vs Missing",
+        author="BSWML One App Documentation",
     )
 
     story = []
-    story.append(Paragraph("BBMP One App", title))
+    story.append(Paragraph("BSWML One App", title))
     story.append(Paragraph("Modules Present vs Missing", title))
     story.append(Paragraph(
-        "Compared with BBMP_One_App_SWM_Presentation.pdf · Review date: 10 Nov 2026",
+        "Compared with BSWML_One_App_SWM_Presentation.pdf · Review date: 10 Nov 2026",
         sub,
     ))
     story.append(Paragraph(
@@ -111,7 +111,7 @@ def build():
         [55 * mm, 40 * mm, 75 * mm],
     ))
     story.append(Paragraph(
-        "Note: Application is a frontend demo (sample data + localStorage). Not live GPS / BBMP backend.",
+        "Note: Application is a frontend demo (sample data + localStorage). Not live GPS / BSWML backend.",
         note,
     ))
 
@@ -190,7 +190,7 @@ def build():
 
     story.append(Spacer(1, 6))
     story.append(Paragraph(
-        "Source presentation: public/BBMP_One_App_SWM_Presentation.pdf. "
+        "Source presentation: public/BSWML_One_App_SWM_Presentation.pdf. "
         "Application code was not changed for this document.",
         note,
     ))

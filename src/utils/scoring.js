@@ -2,7 +2,7 @@ import { DEFAULT_SCORE_WEIGHTS, DEFAULT_SCORE_THRESHOLDS, PAYMENT_BANDS } from '
 
 /**
  * Calculate 100-point daily performance score.
- * Proposed demonstration rules — not approved BBMP payment policy.
+ * Proposed demonstration rules — not approved BSWML payment policy.
  */
 export function calculateDailyScore(inputs, weights = DEFAULT_SCORE_WEIGHTS, thresholds = DEFAULT_SCORE_THRESHOLDS) {
   const w = { ...DEFAULT_SCORE_WEIGHTS, ...weights };

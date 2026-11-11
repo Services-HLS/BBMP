@@ -324,7 +324,7 @@ export default function LoginPage() {
                 color: 'rgba(255,255,255,0.48)',
               }}
             >
-              Not an official BBMP production system · Demo {APP_VERSION}
+              Not an official BSWML production system · Demo {APP_VERSION}
             </Typography>
           </Box>
         </Box>

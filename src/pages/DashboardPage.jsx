@@ -108,7 +108,7 @@ export default function DashboardPage() {
     <PageContainer>
       <PageHeader
         title="Operations Dashboard"
-        subtitle="Ward and fleet overview from sample data. Not connected to live BBMP vehicles or systems."
+        subtitle="Ward and fleet overview from sample data. Not connected to live BSWML vehicles or systems."
         breadcrumbs={[{ label: 'Home', to: '/dashboard' }, { label: 'Dashboard' }]}
         actions={(
           <Button

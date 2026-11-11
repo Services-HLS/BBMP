@@ -14,7 +14,7 @@ export default function ChartCard({
   return (
     <SectionCard title={title} subtitle={subtitle} action={action} contentSx={{ pt: 0.5 }}>
       <Box
-        className={tall ? 'bbmp-chart-box--tall' : 'bbmp-chart-box'}
+        className={tall ? 'bswml-chart-box--tall' : 'bswml-chart-box'}
         sx={{ width: '100%', height: { xs: Math.min(h, 220), sm: h }, minWidth: 0 }}
       >
         <ResponsiveContainer width="100%" height="100%">

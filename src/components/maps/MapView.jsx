@@ -148,7 +148,7 @@ export default function MapView({
         color="text.secondary"
         sx={{ display: 'block', px: 1, py: 0.75, bgcolor: 'background.paper', lineHeight: 1.35 }}
       >
-        Illustrative demo locations — not live BBMP vehicle positions.
+        Illustrative demo locations — not live BSWML vehicle positions.
       </Typography>
     </Box>
   );

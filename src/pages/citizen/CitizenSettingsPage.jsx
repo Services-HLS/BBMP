@@ -53,7 +53,7 @@ export default function CitizenSettingsPage() {
       <PageHeader title={t('settings')} subtitle="Citizen preferences for this demo session." />
 
       <Alert severity="info" icon={false}>
-        Profile fields are demo identity data — not a real BBMP citizen account.
+        Profile fields are demo identity data — not a real BSWML citizen account.
       </Alert>
 
       <Grid container spacing={1.5}>

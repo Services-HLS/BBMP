@@ -1,12 +1,12 @@
-export const APP_NAME = 'BBMP One App';
+export const APP_NAME = 'BSWML One App';
 export const APP_TAGLINE = 'Solid Waste Management & Civic Operations';
 export const APP_ENV_LABEL = 'DEMO ENVIRONMENT · SAMPLE DATA';
 export const APP_VERSION = '1.0.0-demo';
-export const STORAGE_VERSION = '1.4.1';
-export const STORAGE_KEY = `bbmp-one-app-v${STORAGE_VERSION}`;
-export const SESSION_KEY = 'bbmp-one-app-session';
-export const PREFS_KEY = 'bbmp-one-app-prefs';
-export const CITIZEN_PROFILE_KEY = 'bbmp-citizen-profiles';
+export const STORAGE_VERSION = '1.5.0';
+export const STORAGE_KEY = `bswml-one-app-v${STORAGE_VERSION}`;
+export const SESSION_KEY = 'bswml-one-app-session';
+export const PREFS_KEY = 'bswml-one-app-prefs';
+export const CITIZEN_PROFILE_KEY = 'bswml-citizen-profiles';
 
 /** Proposal-scale reference figures (not equal to demo record counts) */
 export const PROPOSAL_SCALE = {
@@ -28,7 +28,7 @@ export const ROLES = {
 export const ROLE_LABELS = {
   [ROLES.CITIZEN]: 'Citizen',
   [ROLES.SUPERVISOR]: 'Field Supervisor / JHI',
-  [ROLES.ADMIN]: 'BBMP Administrator',
+  [ROLES.ADMIN]: 'BSWML Administrator',
 };
 
 export const DEMO_USERS = [
@@ -56,7 +56,7 @@ export const DEMO_USERS = [
     name: 'Ramesh Kumar',
     username: 'supervisor',
     password: 'supervisor123',
-    email: 'ramesh.jhi@demo.bbmp.local',
+    email: 'ramesh.jhi@demo.bswml.local',
     role: ROLES.SUPERVISOR,
     wardIds: ['ward-112', 'ward-113', 'ward-114'],
     phone: '+91 98XXX XX002',
@@ -66,7 +66,7 @@ export const DEMO_USERS = [
     name: 'Ananya Reddy',
     username: 'admin',
     password: 'admin123',
-    email: 'ananya.admin@demo.bbmp.local',
+    email: 'ananya.admin@demo.bswml.local',
     role: ROLES.ADMIN,
     phone: '+91 98XXX XX003',
   },
