@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Alert, Box, Button, Chip, Divider, Drawer, FormControl, InputLabel, MenuItem,
   Select, Stack, Tab, Tabs, TextField, Typography, Dialog, DialogTitle,
-  DialogContent, DialogActions, FormControlLabel, Checkbox,
+  DialogContent, DialogActions, RadioGroup, FormControlLabel, Radio,
 } from '@mui/material';
 import {
   UserPlus, RefreshCw, StickyNote, AlertTriangle, CheckCircle2, Flag, ArrowUpCircle,
@@ -24,46 +25,26 @@ import {
 } from '../constants';
 import { formatDateTime } from '../utils/date';
 import { exportTableCsv } from '../utils/csv';
+import {
+  ISSUE_SOURCES, categoryRule, isOverdue, matchesIssueTab, timeLeftLabel,
+} from '../utils/issues';
 
-const PICKUP_CATEGORIES = [
+const GPS_CATEGORIES = [
   'Skipped Household Pickup',
   'Late Auto',
   'Missed Dry Waste Collection',
+  'Sweeping waste not lifted',
 ];
 
 const TAB_DEFS = [
   { id: 'all', label: 'All' },
   { id: 'submitted', label: 'New / Submitted' },
-  { id: 'verification', label: 'Verification Pending' },
   { id: 'assigned', label: 'Assigned' },
+  { id: 'onsite', label: 'On site' },
   { id: 'overdue', label: 'Overdue' },
-  { id: 'resolved', label: 'Resolved' },
+  { id: 'closed', label: 'Closed' },
   { id: 'reopened', label: 'Reopened' },
 ];
-
-function isOverdue(c) {
-  if (!c?.slaDeadline || c.status === 'Resolved') return false;
-  return new Date(c.slaDeadline).getTime() < Date.now();
-}
-
-function matchesTab(c, tabId) {
-  switch (tabId) {
-    case 'submitted':
-      return c.status === 'Submitted';
-    case 'verification':
-      return c.status === 'Verification Pending';
-    case 'assigned':
-      return c.status === 'Assigned' || c.status === 'In Progress';
-    case 'overdue':
-      return isOverdue(c);
-    case 'resolved':
-      return c.status === 'Resolved';
-    case 'reopened':
-      return c.status === 'Reopened';
-    default:
-      return true;
-  }
-}
 
 const EMPTY_CONFIRM = {
   open: false,
@@ -80,8 +61,14 @@ export default function ComplaintsPage() {
   const { showToast } = useNotifications();
   const { scopeWards, isScoped, allowedWardIdList, scopeLabel } = useOpsScope();
 
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [source, setSource] = useState(searchParams.get('source') || '');
+
+  useEffect(() => {
+    setSource(searchParams.get('source') || '');
+  }, [searchParams]);
   const [category, setCategory] = useState('');
   const [wardId, setWardId] = useState('');
   const [priority, setPriority] = useState('');
@@ -105,7 +92,9 @@ export default function ComplaintsPage() {
   const [escalateReason, setEscalateReason] = useState('');
   const [resolveOpen, setResolveOpen] = useState(false);
   const [resolveNote, setResolveNote] = useState('');
-  const [demoEvidence, setDemoEvidence] = useState(false);
+  const [proofKind, setProofKind] = useState('photo');
+  const [proofDistance, setProofDistance] = useState('8');
+  const [proofFileName, setProofFileName] = useState('');
 
   const wards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
   const supervisors = data?.supervisors || [];
@@ -114,8 +103,8 @@ export default function ComplaintsPage() {
   const loadComplaints = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await api.getComplaints({
-        category: category || undefined,
+      const list = await api.getIssueRegister({
+        source: source || undefined,
         wardId: wardId || undefined,
         wardIds: !wardId && isScoped ? allowedWardIdList : undefined,
       });
@@ -125,14 +114,15 @@ export default function ComplaintsPage() {
     } finally {
       setLoading(false);
     }
-  }, [api, category, wardId, showToast, isScoped, allowedWardIdList]);
+  }, [api, source, wardId, showToast, isScoped, allowedWardIdList]);
 
   useEffect(() => {
     if (!storeLoading && data) loadComplaints();
   }, [storeLoading, data, loadComplaints]);
 
   const filtered = useMemo(() => {
-    let list = rows.filter((c) => matchesTab(c, tab));
+    let list = rows.filter((c) => matchesIssueTab(c, tab));
+    if (category) list = list.filter((c) => c.category === category);
     if (priority) list = list.filter((c) => c.priority === priority);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -144,17 +134,21 @@ export default function ComplaintsPage() {
       );
     }
     return list;
-  }, [rows, tab, priority, search]);
+  }, [rows, tab, priority, category, search]);
 
   const tabCounts = useMemo(() => {
     const counts = {};
     TAB_DEFS.forEach((t) => {
-      counts[t.id] = rows.filter((c) => matchesTab(c, t.id)).length;
+      counts[t.id] = rows.filter((c) => matchesIssueTab(c, t.id)).length;
     });
     return counts;
   }, [rows]);
 
   const wardName = (id) => wards.find((w) => w.id === id)?.name || id || '—';
+  const blockLabel = (id) => data?.blocks?.find((b) => b.id === id)?.code || id || '—';
+  const packageLabel = (id) => data?.packages?.find((p) => p.id === id)?.name || '—';
+  const contractorLabel = (id) => data?.contractors?.find((c) => c.id === id)?.name || '—';
+  const sourceLabel = (id) => ISSUE_SOURCES.find((s) => s.id === id)?.label || id || 'Citizen complaint';
   const supervisorName = (id) => supervisors.find((s) => s.id === id)?.name || id || 'Unassigned';
 
   const openDetail = (row) => {
@@ -315,34 +309,77 @@ export default function ComplaintsPage() {
 
   const requestResolve = () => {
     setResolveNote('');
-    setDemoEvidence(false);
+    setProofKind('photo');
+    setProofDistance('8');
+    setProofFileName('');
     setResolveOpen(true);
   };
 
   const submitResolve = () => {
-    const needsEvidence = PICKUP_CATEGORIES.includes(selected?.category);
-    if (needsEvidence && !demoEvidence && !selected?.resolutionEvidence) {
-      showToast('Demo evidence is required to resolve pickup-related complaints', 'warning');
+    const rule = categoryRule(selected?.category);
+    const needsProof = rule && rule.evidence !== 'none';
+    if (needsProof && proofKind === 'photo' && !proofFileName) {
+      showToast('Take the after-photo with the camera. Gallery photos are not accepted.', 'warning');
       return;
     }
+    const proof = needsProof ? {
+      id: `photo-${selected.id}-${Date.now()}`,
+      kind: proofKind,
+      source: proofKind === 'photo' ? 'camera' : 'gps',
+      distanceM: Number(proofDistance),
+      capturedAt: new Date().toISOString(),
+    } : null;
     setResolveOpen(false);
     setConfirm({
       open: true,
-      title: 'Resolve complaint?',
-      message: needsEvidence
-        ? `Mark ${selected.id} as Resolved with demo evidence attached?`
-        : `Mark ${selected.id} as Resolved?`,
-      confirmLabel: 'Resolve',
+      title: 'Submit closure proof?',
+      message: `Send ${selected.id} to the JHI as closure submitted. The citizen confirms after the proof is approved.`,
+      confirmLabel: 'Submit proof',
       confirmColor: 'success',
       onConfirm: () => runConfirmed(
         () => api.updateComplaintStatus(
           selected.id,
-          'Resolved',
-          resolveNote || 'Resolved in demo workflow',
+          'Closure submitted',
+          resolveNote || 'Closure submitted with proof',
           actor,
-          needsEvidence ? (demoEvidence ? `demo-evidence-${selected.id}` : selected.resolutionEvidence) : null
+          proof
         ),
-        `${selected.id} resolved`
+        `${selected.id} closure submitted`
+      ),
+    });
+  };
+
+  const decideProof = (approved) => {
+    setConfirm({
+      open: true,
+      title: approved ? 'Approve proof?' : 'Reject proof?',
+      message: approved
+        ? `${selected.id} goes to the citizen to confirm or reopen within 48 hours.`
+        : `${selected.id} goes back to Assigned.`,
+      confirmLabel: approved ? 'Approve' : 'Reject',
+      confirmColor: approved ? 'success' : 'error',
+      onConfirm: () => runConfirmed(
+        () => api.updateComplaintStatus(
+          selected.id,
+          approved ? 'Pending citizen' : 'Assigned',
+          approved ? 'JHI approved the proof' : 'JHI rejected the proof',
+          actor
+        ),
+        approved ? `${selected.id} waiting for the citizen` : `${selected.id} returned to Assigned`
+      ),
+    });
+  };
+
+  const confirmClosed = () => {
+    setConfirm({
+      open: true,
+      title: 'Confirm this issue is closed?',
+      message: `${selected.id} will be marked Closed.`,
+      confirmLabel: 'Confirm closed',
+      confirmColor: 'success',
+      onConfirm: () => runConfirmed(
+        () => api.updateComplaintStatus(selected.id, 'Closed', 'Citizen confirmed the fix', actor),
+        `${selected.id} closed`
       ),
     });
   };
@@ -350,7 +387,28 @@ export default function ComplaintsPage() {
   const columns = useMemo(() => [
     { id: 'id', header: 'ID', accessor: 'id', hideOnMobile: true },
     { id: 'title', header: 'Title', accessor: 'title' },
+    {
+      id: 'source',
+      header: 'Source',
+      accessor: (r) => sourceLabel(r.source),
+      render: (r) => sourceLabel(r.source),
+      hideOnMobile: true,
+    },
     { id: 'category', header: 'Category', accessor: 'category', hideOnMobile: true },
+    {
+      id: 'block',
+      header: 'Block',
+      accessor: (r) => blockLabel(r.blockId),
+      render: (r) => blockLabel(r.blockId),
+      hideOnMobile: true,
+    },
+    {
+      id: 'package',
+      header: 'Package',
+      accessor: (r) => packageLabel(r.packageId),
+      render: (r) => packageLabel(r.packageId),
+      hideOnMobile: true,
+    },
     {
       id: 'ward',
       header: 'Ward',
@@ -377,13 +435,27 @@ export default function ComplaintsPage() {
       ),
     },
     {
+      id: 'sla',
+      header: 'SLA due',
+      accessor: (r) => (r.slaDeadline ? formatDateTime(r.slaDeadline) : 'No SLA'),
+      render: (r) => (r.slaDeadline ? formatDateTime(r.slaDeadline) : 'No SLA'),
+      hideOnMobile: true,
+    },
+    {
+      id: 'timeLeft',
+      header: 'Time left',
+      accessor: (r) => timeLeftLabel(r.slaDeadline, Date.now(), r.status),
+      render: (r) => timeLeftLabel(r.slaDeadline, Date.now(), r.status),
+      hideOnMobile: true,
+    },
+    {
       id: 'created',
       header: 'Created',
       accessor: (r) => formatDateTime(r.createdAt),
       render: (r) => formatDateTime(r.createdAt),
       hideOnMobile: true,
     },
-  ], [wards]);
+  ], [wards, data?.blocks, data?.packages]);
 
   const handleExport = () => {
     exportTableCsv(
@@ -410,7 +482,7 @@ export default function ComplaintsPage() {
     <PageContainer>
       <PageHeader
         title="Complaints"
-        subtitle="Full complaint management against the demo dataset. Every status change requires confirmation — nothing closes silently."
+        subtitle="One grievance register. Complaints, black spots, and dashcam events are rows in this list. Closure needs a camera photo or a GPS stop."
         breadcrumbs={[{ label: 'Home', to: '/dashboard' }, { label: 'Complaints' }]}
         actions={(
           <>
@@ -425,7 +497,7 @@ export default function ComplaintsPage() {
       />
 
       <Alert severity="info" icon={false}>
-        {APP_ENV_LABEL}: actions update local sample data only. Pickup categories need demo evidence before resolve.
+        {APP_ENV_LABEL}. Overdue is a flag, not a status. Potholes and suggestions have no SLA. Black spots and dashcam rows open on their own screens.
         {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
@@ -454,6 +526,15 @@ export default function ComplaintsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <FormControl size="small">
+          <InputLabel>Source</InputLabel>
+          <Select label="Source" value={source} onChange={(e) => setSource(e.target.value)}>
+            <MenuItem value="">All sources</MenuItem>
+            {ISSUE_SOURCES.map((item) => (
+              <MenuItem key={item.id} value={item.id}>{item.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         <FormControl size="small">
           <InputLabel>Category</InputLabel>
           <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -520,10 +601,13 @@ export default function ComplaintsPage() {
 
             <Typography variant="body2" sx={{ mb: 1 }}>{selected.description}</Typography>
             <Typography variant="caption" color="text.secondary" display="block">
-              Category: {selected.category}
+              Source: {sourceLabel(selected.source)} · Category: {selected.category}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
-              Ward: {wardName(selected.wardId)}
+              Ward: {wardName(selected.wardId)} · Block: {blockLabel(selected.blockId)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Package: {packageLabel(selected.packageId)} · Contractor: {contractorLabel(selected.contractorId)}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block">
               Reporter: {selected.reporterName}
@@ -535,9 +619,16 @@ export default function ComplaintsPage() {
               Created: {formatDateTime(selected.createdAt)}
             </Typography>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-              SLA: {formatDateTime(selected.slaDeadline)}
+              SLA: {selected.slaDeadline ? `${formatDateTime(selected.slaDeadline)} · ${timeLeftLabel(selected.slaDeadline)}` : 'No SLA'}
             </Typography>
 
+            {selected.readOnly && (
+              <Alert severity="info" icon={false} sx={{ mb: 2 }}>
+                This {sourceLabel(selected.source).toLowerCase()} row is part of the register. Update it on {selected.link === '/dashcam' ? 'Dashcam' : 'Sweeping'}.
+              </Alert>
+            )}
+
+            {!selected.readOnly && (
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
               <Button size="small" variant="outlined" startIcon={<UserPlus size={14} />} onClick={requestAssign}>
                 Assign
@@ -554,12 +645,28 @@ export default function ComplaintsPage() {
               <Button size="small" variant="outlined" color="error" startIcon={<ArrowUpCircle size={14} />} onClick={requestEscalate}>
                 Escalate
               </Button>
-              {selected.status !== 'Resolved' && (
+              {!['Resolved', 'Closed', 'Pending citizen', 'Closure submitted', 'Invalid'].includes(selected.status) && (
                 <Button size="small" variant="contained" color="success" startIcon={<CheckCircle2 size={14} />} onClick={requestResolve}>
-                  Resolve
+                  Submit proof
+                </Button>
+              )}
+              {selected.status === 'Closure submitted' && (
+                <>
+                  <Button size="small" variant="contained" color="success" onClick={() => decideProof(true)}>
+                    Approve proof
+                  </Button>
+                  <Button size="small" variant="outlined" color="error" onClick={() => decideProof(false)}>
+                    Reject proof
+                  </Button>
+                </>
+              )}
+              {selected.status === 'Pending citizen' && (
+                <Button size="small" variant="contained" onClick={confirmClosed}>
+                  Citizen confirmed
                 </Button>
               )}
             </Stack>
+            )}
 
             <Divider sx={{ mb: 1 }} />
             <Typography variant="subtitle2" gutterBottom>History</Typography>
@@ -696,36 +803,52 @@ export default function ComplaintsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Resolve dialog */}
       <Dialog open={resolveOpen} onClose={() => setResolveOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Resolve complaint</DialogTitle>
+        <DialogTitle>Closure proof</DialogTitle>
         <DialogContent>
+          <Alert severity="info" icon={false} sx={{ mt: 1, mb: 2 }}>
+            Use the camera in this app. The photo must be within 10 m of the pin and no more than 30 minutes old. Pickup categories can use a GPS stop within 25 m instead.
+          </Alert>
           <TextField
             fullWidth
             size="small"
-            label="Resolution note"
+            label="Note"
             multiline
             minRows={2}
             value={resolveNote}
             onChange={(e) => setResolveNote(e.target.value)}
-            sx={{ mt: 1, mb: 1 }}
+            sx={{ mb: 2 }}
           />
-          {PICKUP_CATEGORIES.includes(selected?.category) && (
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  checked={demoEvidence || Boolean(selected?.resolutionEvidence)}
-                  onChange={(e) => setDemoEvidence(e.target.checked)}
-                  disabled={Boolean(selected?.resolutionEvidence)}
-                />
+          <FormControl>
+            <RadioGroup value={proofKind} onChange={(e) => setProofKind(e.target.value)}>
+              <FormControlLabel value="photo" control={<Radio />} label="After-photo from the camera" />
+              {GPS_CATEGORIES.includes(selected?.category) && (
+                <FormControlLabel value="gps" control={<Radio />} label="GPS stop at the building" />
               )}
-              label={
-                selected?.resolutionEvidence
-                  ? 'Existing demo evidence on record'
-                  : 'Attach demo evidence (required for pickup categories)'
-              }
-            />
+            </RadioGroup>
+          </FormControl>
+          {proofKind === 'photo' && (
+            <Button variant="outlined" component="label" sx={{ mt: 1 }}>
+              {proofFileName ? `Camera: ${proofFileName}` : 'Open camera'}
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => setProofFileName(e.target.files?.[0]?.name || '')}
+              />
+            </Button>
           )}
+          <TextField
+            fullWidth
+            size="small"
+            type="number"
+            label="Distance to pin (metres)"
+            value={proofDistance}
+            onChange={(e) => setProofDistance(e.target.value)}
+            sx={{ mt: 2 }}
+            helperText="Must be 10 m or less for a photo, 25 m or less for a GPS stop."
+          />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setResolveOpen(false)}>Cancel</Button>

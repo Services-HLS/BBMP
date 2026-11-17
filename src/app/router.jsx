@@ -10,6 +10,8 @@ import { ROLES } from '../constants';
 
 import DashboardPage from '../pages/DashboardPage';
 import VehiclesPage from '../pages/VehiclesPage';
+import WardSimulationPage from '../pages/WardSimulationPage';
+import WardHouseCollectionPage from '../pages/WardHouseCollectionPage';
 import RoutesPage from '../pages/RoutesPage';
 import CoveragePage from '../pages/CoveragePage';
 import DryWasteCentresPage from '../pages/DryWasteCentresPage';
@@ -55,6 +57,9 @@ export default function AppRouter() {
 
           <Route path="/dashboard" element={<ProtectedRoute roles={ops}><DashboardPage /></ProtectedRoute>} />
           <Route path="/vehicles" element={<ProtectedRoute roles={ops}><VehiclesPage /></ProtectedRoute>} />
+          <Route path="/simulation" element={<ProtectedRoute roles={ops}><WardSimulationPage /></ProtectedRoute>} />
+          <Route path="/ward-39" element={<ProtectedRoute roles={ops}><WardHouseCollectionPage /></ProtectedRoute>} />
+          <Route path="/ward-57" element={<ProtectedRoute roles={ops}><WardHouseCollectionPage /></ProtectedRoute>} />
           <Route path="/routes" element={<ProtectedRoute roles={ops}><RoutesPage /></ProtectedRoute>} />
           <Route path="/coverage" element={<ProtectedRoute roles={ops}><CoveragePage /></ProtectedRoute>} />
           <Route path="/dry-waste-centres" element={<ProtectedRoute roles={ops}><DryWasteCentresPage /></ProtectedRoute>} />

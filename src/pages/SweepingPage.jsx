@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider,
   Drawer, FormControl, Grid, IconButton, InputLabel, List, ListItem, ListItemText,
@@ -238,7 +239,9 @@ export default function SweepingPage() {
       />
 
       <Alert severity="info" icon={false}>
-        Demo register — {stretches.length} stretches in view; clearance and evidence are simulated.
+        Black spots are rows in the grievance register. Open them with the Black spot filter on{' '}
+        <RouterLink to="/complaints?source=black_spot">Complaints</RouterLink>.
+        {' '}Demo stretches: {stretches.length}. Clearance here is still sample data.
         {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 

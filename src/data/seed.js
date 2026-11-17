@@ -1,5 +1,6 @@
 import { DEFAULT_SCORE_WEIGHTS, DEFAULT_SCORE_THRESHOLDS, BENGALURU_CENTER } from '../constants';
 import { calculateDailyScore } from '../utils/scoring';
+import { applyHouseholdCoverage, slaDeadlineFor } from '../utils/issues';
 import { todayISO, daysAgoISO, nowISO } from '../utils/date';
 
 /** Deterministic pseudo-random from seed string */
@@ -70,6 +71,24 @@ export function createSeedData() {
     { id: 'sup-4', name: 'Fatima Begum', role: 'JHI', wardIds: ['ward-88'], phone: '+91 98XXX XX006', active: true },
   ];
 
+  const contractors = [
+    { id: 'con-east', name: 'East Sweep Services', active: true },
+    { id: 'con-west', name: 'West Ward Collectors', active: true },
+    { id: 'con-north', name: 'North Fleet Co', active: true },
+    { id: 'con-south', name: 'South City Waste', active: true },
+    { id: 'con-central', name: 'Central Muster Works', active: true },
+  ];
+
+  const packages = [
+    { id: 'pkg-east', name: 'Package East', contractorId: 'con-east', corporationId: 'corp-east', active: true },
+    { id: 'pkg-west', name: 'Package West', contractorId: 'con-west', corporationId: 'corp-west', active: true },
+    { id: 'pkg-north', name: 'Package North', contractorId: 'con-north', corporationId: 'corp-north', active: true },
+    { id: 'pkg-south', name: 'Package South', contractorId: 'con-south', corporationId: 'corp-south', active: true },
+    { id: 'pkg-central', name: 'Package Central', contractorId: 'con-central', corporationId: 'corp-central', active: true },
+  ];
+
+  const packageFor = (corporationId) => packages.find((pkg) => pkg.corporationId === corporationId) || null;
+
   const driverNames = [
     'Manjunath R', 'Venkat G', 'Imran Khan', 'Suresh B', 'Naveen K',
     'Ravi Prasad', 'Abdul Rahman', 'Gopal Krishna', 'Yogesh M', 'Prakash T',
@@ -110,6 +129,8 @@ export function createSeedData() {
         vehicleId,
         routeId,
         households: 40 + Math.floor(seeded(autoIdx + 7) * 80),
+        packageId: packageFor(ward.corporationId)?.id || null,
+        contractorId: packageFor(ward.corporationId)?.contractorId || null,
         active: true,
       });
 
@@ -125,6 +146,8 @@ export function createSeedData() {
         constituencyId: ward.constituencyId,
         musterId: muster?.id,
         supervisorId: supervisor?.id,
+        packageId: packageFor(ward.corporationId)?.id || null,
+        contractorId: packageFor(ward.corporationId)?.contractorId || null,
         status,
         lat: coord.lat,
         lng: coord.lng,
@@ -218,7 +241,7 @@ export function createSeedData() {
       households.push({
         id: `hh-${block.id}-${hi + 1}`,
         doorNo: `${10 + hi}`,
-        street: `${['MG', '100 Feet', 'Double Road', 'Service', 'Cross'][hi % 5]} Road`,
+        street: ['MG Road', '100 Feet Road', 'Double Road', 'Service Road', 'Cross Road'][hi % 5],
         wardId: block.wardId,
         blockId: block.id,
         routeId: block.routeId,
@@ -252,6 +275,8 @@ export function createSeedData() {
       };
     })
   );
+
+  applyHouseholdCoverage(vehicles, routes, blocks, households);
 
   const houseFor = (blockId, index = 1) => households.find((h) => h.id === `hh-${blockId}-${index}`) || null;
 
@@ -328,7 +353,7 @@ export function createSeedData() {
       description: 'Collection auto usually arrives by 8:30 but has not come yet.',
       reporterName: 'Arjun Mehta', reporterId: 'user-citizen-2', wardId: 'ward-113', blockId: 'block-113-A',
       routeId: 'route-113-A', lat: 12.9610, lng: 77.6395, createdAt: `${daysAgoISO(1)}T10:00:00.000Z`,
-      priority: 'Medium', assignedTo: 'sup-1', status: 'In Progress', photoDataUrl: null,
+      priority: 'Medium', assignedTo: 'sup-1', status: 'On site', photoDataUrl: null,
       slaDeadline: `${daysAgoISO(0)}T18:00:00.000Z`,
       history: [
         { at: `${daysAgoISO(1)}T10:00:00.000Z`, action: 'Submitted', by: 'Arjun Mehta', note: 'Complaint submitted' },
@@ -414,6 +439,18 @@ export function createSeedData() {
     },
   ];
 
+  complaints.forEach((complaint) => {
+    const block = blocks.find((b) => b.id === complaint.blockId);
+    complaint.source = 'complaint';
+    complaint.packageId = block?.packageId || null;
+    complaint.contractorId = block?.contractorId || null;
+    complaint.buildingId = complaint.blockId ? `bldg-${complaint.blockId}-1` : null;
+    complaint.slaDeadline = slaDeadlineFor(complaint.category, complaint.createdAt);
+    if (complaint.resolutionEvidence && String(complaint.resolutionEvidence).startsWith('demo-evidence')) {
+      complaint.resolutionEvidence = null;
+    }
+  });
+
   const aiEvents = [
     {
       id: 'AIE-10001', type: 'Pothole', vehicleId: vehicles[0]?.id, routeId: vehicles[0]?.routeId,
@@ -474,15 +511,58 @@ export function createSeedData() {
     },
   ];
 
+  aiEvents.forEach((event) => {
+    const vehicle = vehicles.find((v) => v.id === event.vehicleId);
+    const noMovement = vehicle && (vehicle.status === 'Offline' || vehicle.speed === 0);
+    if (noMovement && (event.type === 'Speeding' || event.type === 'Unusual Stoppage')) {
+      event.status = 'False Positive';
+      event.history.push({
+        at: nowISO(),
+        action: 'False Positive',
+        by: 'System',
+        note: 'Suppressed: offline or 0 km/h, so this is not a live deviation',
+      });
+    }
+  });
+
+  const clampEventTime = (iso) => {
+    if (!iso) return iso;
+    const time = new Date(iso).getTime();
+    if (Number.isNaN(time)) return iso;
+    const latest = Date.now() - 5 * 60 * 1000;
+    return time > latest ? new Date(latest).toISOString() : iso;
+  };
+  const clampHistory = (rows) => {
+    (rows || []).forEach((row) => {
+      if (row.at) row.at = clampEventTime(row.at);
+    });
+  };
+  complaints.forEach((complaint) => {
+    complaint.createdAt = clampEventTime(complaint.createdAt);
+    clampHistory(complaint.history);
+    complaint.slaDeadline = slaDeadlineFor(complaint.category, complaint.createdAt);
+  });
+  aiEvents.forEach((event) => {
+    event.timestamp = clampEventTime(event.timestamp);
+    clampHistory(event.history);
+  });
+
   const dailyScores = [];
   vehicles.forEach((v, vi) => {
     for (let d = 0; d < 14; d += 1) {
       const date = daysAgoISO(d);
       const expectedStops = v.expectedStops;
       const completedStops = Math.floor(expectedStops * (0.75 + seeded(vi * 20 + d) * 0.25));
-      const housesExpected = blocks.find((b) => b.id === v.blockId)?.households || 60;
-      const housesCovered = Math.floor(housesExpected * (0.7 + seeded(vi + d) * 0.3));
+      const blockHouses = households.filter((h) => h.blockId === v.blockId);
+      const liveServed = blockHouses.filter((h) => h.coverageStatus === 'Collected').length;
+      const housesExpected = d === 0 && blockHouses.length
+        ? blockHouses.length
+        : (blocks.find((b) => b.id === v.blockId)?.households || 60);
+      const housesCovered = d === 0 && blockHouses.length
+        ? liveServed
+        : Math.floor(housesExpected * (0.7 + seeded(vi + d) * 0.3));
       const dwcVisited = seeded(vi + d + 3) > 0.2;
+      const offlineDay = v.status === 'Offline' && d === 0;
       const inputs = {
         expectedStops,
         completedStops,
@@ -491,9 +571,11 @@ export function createSeedData() {
         dwcVisited,
         routeMinutes: 150 + Math.floor(seeded(vi + d) * 80),
         plannedMinutes: 180,
-        speedAlerts: seeded(vi + d) > 0.85 ? 1 : 0,
-        unnecessaryStoppages: Math.floor(seeded(vi + d + 1) * 4),
-        deviceUptimePct: 90 + Math.floor(seeded(vi + d + 2) * 10),
+        speedAlerts: offlineDay ? 0 : (seeded(vi + d) > 0.85 ? 1 : 0),
+        unnecessaryStoppages: offlineDay ? 0 : Math.floor(seeded(vi + d + 1) * 4),
+        deviceUptimePct: offlineDay ? 0 : 90 + Math.floor(seeded(vi + d + 2) * 10),
+        offline: offlineDay,
+        gpsPings: offlineDay ? 0 : 12,
       };
       const result = calculateDailyScore(inputs);
       dailyScores.push({
@@ -530,11 +612,11 @@ export function createSeedData() {
     },
     {
       id: 'notif-2', category: 'Overdue Complaint', title: 'Complaint approaching SLA',
-      message: 'CMP-100003 requires verification — SLA at risk in Ward 112.',
+      message: 'CMP-100003 requires verification — SLA at risk in Ward 120.',
       priority: 'Critical', createdAt: `${daysAgoISO(0)}T08:30:00.000Z`, read: false,
       relatedType: 'complaint', relatedId: 'CMP-100003', link: '/complaints',
       roles: ['admin', 'supervisor'],
-      wardIds: ['ward-112'],
+      wardIds: ['ward-120'],
     },
     {
       id: 'notif-3', category: 'Speed Violation', title: 'Speed alert confirmed',
@@ -765,6 +847,10 @@ export function createSeedData() {
     { id: 'fac-3', name: 'WtE Illustrative Unit', type: 'Waste-to-Energy', capacityTpd: 300, utilisedTpd: 210, status: 'Illustrative' },
   ];
 
+  notifications.forEach((note) => {
+    note.createdAt = clampEventTime(note.createdAt);
+  });
+
   return {
     _meta: {
       seededAt: nowISO(),
@@ -783,6 +869,8 @@ export function createSeedData() {
     },
     corporations,
     constituencies,
+    contractors,
+    packages,
     wards,
     musters,
     supervisors,

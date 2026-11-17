@@ -15,8 +15,7 @@ export default function KpiCard({ title, value, subtitle, icon: Icon, color = 'p
         bgcolor: 'background.paper',
         border: '1px solid',
         borderColor: 'divider',
-        boxShadow: '0 1px 3px rgba(16,40,60,0.05)',
-        transition: 'box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease',
+        transition: 'box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease',
         '&:hover': onClick
           ? {
               boxShadow: '0 4px 14px rgba(16,40,60,0.1)',
@@ -72,7 +71,7 @@ export default function KpiCard({ title, value, subtitle, icon: Icon, color = 'p
               sx={{
                 width: layout.kpiIconBox,
                 height: layout.kpiIconBox,
-                borderRadius: 1.5,
+                borderRadius: '12px',
                 flexShrink: 0,
                 display: 'grid',
                 placeItems: 'center',

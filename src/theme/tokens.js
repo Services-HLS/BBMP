@@ -21,18 +21,18 @@ export const colors = {
   criticalSoft: '#F9EAEA',
   info: '#2A6F97',
   infoSoft: '#E8F1F6',
-  bg: '#EAF0F4',
-  bgElevated: '#F5F8FA',
+  bg: '#F3F5F8',
+  bgElevated: '#F7F8FA',
   paper: '#FFFFFF',
-  text: '#143A4F',
-  textSecondary: '#5B6F80',
+  text: '#122033',
+  textSecondary: '#5C6B7A',
   textDisabled: '#94A3B8',
-  border: '#D5DEE6',
-  borderStrong: '#B8C5D0',
-  sidebar: '#0F2A3A',
+  border: '#E6EAEF',
+  borderStrong: '#D5DCE3',
+  sidebar: '#101820',
   sidebarHover: 'rgba(255,255,255,0.06)',
-  sidebarActive: 'rgba(45,190,106,0.28)',
-  sidebarBorder: 'rgba(255,255,255,0.1)',
+  sidebarActive: 'rgba(255,255,255,0.1)',
+  sidebarBorder: 'rgba(255,255,255,0.08)',
   sidebarText: 'rgba(255,255,255,0.92)',
   sidebarMuted: 'rgba(255,255,255,0.58)',
 };
@@ -64,19 +64,19 @@ export const layout = {
 };
 
 export const radii = {
-  sm: 4,
-  md: 6,
-  lg: 8,
-  xl: 10,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
   pill: 999,
 };
 
 export const shadows = {
   none: 'none',
-  xs: '0 1px 2px rgba(15,42,58,0.05)',
-  sm: '0 1px 3px rgba(15,42,58,0.06)',
-  md: '0 4px 12px rgba(15,42,58,0.08)',
-  focus: '0 0 0 3px rgba(45,190,106,0.28)',
+  xs: '0 1px 2px rgba(16,24,32,0.04)',
+  sm: '0 8px 24px rgba(16,24,32,0.06)',
+  md: '0 16px 40px rgba(16,24,32,0.08)',
+  focus: '0 0 0 3px rgba(31,168,106,0.28)',
 };
 
 export const typographyScale = {

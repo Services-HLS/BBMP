@@ -25,6 +25,24 @@ describe('calculateDailyScore', () => {
     expect(result.band).toBe(PAYMENT_BANDS.FULL);
   });
 
+  it('scores 0 when the vehicle has no GPS', () => {
+    const result = calculateDailyScore({
+      expectedStops: 40,
+      completedStops: 40,
+      housesExpected: 60,
+      housesCovered: 60,
+      dwcVisited: true,
+      routeMinutes: 170,
+      plannedMinutes: 180,
+      speedAlerts: 0,
+      unnecessaryStoppages: 1,
+      deviceUptimePct: 0,
+      offline: true,
+    });
+    expect(result.total).toBe(0);
+    expect(result.band).toBe(PAYMENT_BANDS.REVIEW);
+  });
+
   it('penalises missed DWC and low coverage', () => {
     const result = calculateDailyScore({
       expectedStops: 40,

@@ -16,16 +16,9 @@ export default function PageHeader({
     <Box
       sx={{
         mb: 2.5,
-        pb: 2,
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-        background: (t) =>
-          t.palette.mode === 'dark'
-            ? 'transparent'
-            : 'linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%)',
+        pb: 0.5,
         mx: { xs: -0.5, sm: 0 },
         px: { xs: 0.5, sm: 0 },
-        borderRadius: { sm: 1 },
       }}
     >
       {breadcrumbs.length > 0 && (
@@ -66,11 +59,11 @@ export default function PageHeader({
             <Typography
               component="h1"
               sx={{
-                fontSize: { xs: '1.2rem', sm: '1.35rem' },
-                fontWeight: 800,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.25,
-                color: 'primary.main',
+                fontSize: { xs: '1.35rem', sm: '1.6rem' },
+                fontWeight: 700,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.2,
+                color: 'text.primary',
               }}
             >
               {title}

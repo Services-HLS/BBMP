@@ -94,8 +94,8 @@ const getDesignTokens = (mode) => {
         styleOverrides: {
           root: {
             borderRadius: radii.md,
-            minHeight: 36,
-            padding: '6px 14px',
+            minHeight: 38,
+            padding: '7px 16px',
             boxShadow: 'none',
             '&:hover': { boxShadow: 'none' },
             '&.Mui-focusVisible': { boxShadow: shadows.focus },
@@ -118,9 +118,9 @@ const getDesignTokens = (mode) => {
         defaultProps: { elevation: 0 },
         styleOverrides: {
           root: {
-            borderRadius: radii.xl,
+            borderRadius: radii.lg,
             border: `1px solid ${palette.divider}`,
-            boxShadow: isDark ? 'none' : '0 1px 3px rgba(16,40,60,0.05)',
+            boxShadow: isDark ? 'none' : shadows.xs,
             backgroundImage: 'none',
             backgroundColor: palette.background.paper,
           },
@@ -140,9 +140,9 @@ const getDesignTokens = (mode) => {
         styleOverrides: {
           root: {
             fontWeight: 600,
-            fontSize: '0.6875rem',
-            height: 24,
-            borderRadius: radii.sm,
+            fontSize: '0.75rem',
+            height: 26,
+            borderRadius: radii.pill,
           },
           sizeSmall: { height: 22 },
         },
@@ -177,12 +177,12 @@ const getDesignTokens = (mode) => {
         styleOverrides: {
           root: {
             '& .MuiTableCell-head': {
-              fontWeight: 700,
+              fontWeight: 600,
               backgroundColor: isDark ? alpha('#fff', 0.03) : colors.bgElevated,
               color: palette.text.secondary,
-              fontSize: '0.6875rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
+              fontSize: '0.75rem',
+              textTransform: 'none',
+              letterSpacing: '-0.01em',
               whiteSpace: 'nowrap',
               lineHeight: 1.3,
             },
@@ -217,8 +217,8 @@ const getDesignTokens = (mode) => {
         styleOverrides: {
           root: {
             borderRadius: radii.md,
-            backgroundColor: isDark ? alpha('#fff', 0.02) : colors.paper,
-            minHeight: layout.controlHeight - 4,
+            backgroundColor: isDark ? alpha('#fff', 0.03) : colors.paper,
+            minHeight: layout.controlHeight,
           },
           input: { paddingTop: 9, paddingBottom: 9 },
         },
@@ -281,6 +281,7 @@ const getDesignTokens = (mode) => {
             borderRadius: radii.md,
             alignItems: 'center',
             fontSize: '0.8125rem',
+            border: `1px solid ${alpha(palette.divider, 0.9)}`,
           },
           standardInfo: {
             backgroundColor: isDark ? alpha(colors.info, 0.15) : colors.infoSoft,

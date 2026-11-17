@@ -12,6 +12,8 @@ export const ADMIN_NAV = [
     items: [
       { label: 'Dashboard', labelKey: 'dashboard', path: '/dashboard', icon: LayoutDashboard, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },
       { label: 'Live Vehicle Tracking', labelKey: 'liveVehicleTracking', path: '/vehicles', icon: Truck, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },
+      { label: 'Ward simulation', path: '/simulation', icon: MapPin, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },
+      { label: 'Ward 39 houses', path: '/ward-39', icon: House, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },
       { label: 'Routes & Blocks', labelKey: 'routesBlocks', path: '/routes', icon: Route, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },
       { label: 'Household Coverage', labelKey: 'householdCoverage', path: '/coverage', icon: House, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },
       { label: 'Dry Waste Centres', labelKey: 'dryWasteCentres', path: '/dry-waste-centres', icon: Recycle, roles: [ROLES.ADMIN, ROLES.SUPERVISOR] },

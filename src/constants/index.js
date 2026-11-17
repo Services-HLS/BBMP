@@ -2,7 +2,7 @@ export const APP_NAME = 'BSWML One App';
 export const APP_TAGLINE = 'Solid Waste Management & Civic Operations';
 export const APP_ENV_LABEL = 'DEMO ENVIRONMENT · SAMPLE DATA';
 export const APP_VERSION = '1.0.0-demo';
-export const STORAGE_VERSION = '1.5.0';
+export const STORAGE_VERSION = '1.6.0';
 export const STORAGE_KEY = `bswml-one-app-v${STORAGE_VERSION}`;
 export const SESSION_KEY = 'bswml-one-app-session';
 export const PREFS_KEY = 'bswml-one-app-prefs';
@@ -84,7 +84,17 @@ export const COMPLAINT_CATEGORIES = [
   'Skipped Household Pickup',
   'Late Auto',
   'Missed Dry Waste Collection',
+  'Mixed waste taken',
+  'Market / public amenity / micro C&D',
+  'Dead animal',
+  'Sweeping waste not lifted',
+  'GVP / bin / GTP overflow',
   'Black Spot / Illegal Dumping',
+  'Dumping / burning',
+  'Spillage / leachate',
+  'Vehicle misuse',
+  'Crew conduct / PPE',
+  'New garbage spot',
   'Pothole',
   'Debris',
   'Suggestion',
@@ -95,10 +105,17 @@ export const COMPLAINT_STATUSES = [
   'Verification Pending',
   'Verified',
   'Assigned',
+  'Acknowledged',
+  'On site',
   'In Progress',
+  'Closure submitted',
+  'Proof rejected',
+  'Pending citizen',
   'Resolution Evidence Submitted',
   'Resolved',
+  'Closed',
   'Reopened',
+  'Invalid',
 ];
 
 export const COMPLAINT_PRIORITIES = ['Low', 'Medium', 'High', 'Critical'];

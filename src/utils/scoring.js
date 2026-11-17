@@ -39,6 +39,7 @@ export function calculateDailyScore(inputs, weights = DEFAULT_SCORE_WEIGHTS, thr
   const stoppageScore = Math.max(0, w.unnecessaryStoppages - excessStoppages);
 
   const uptimeScore = Math.round((deviceUptimePct / 100) * w.deviceUptime);
+  const noGps = inputs.offline === true || inputs.deviceUptimePct === 0 || inputs.gpsPings === 0;
 
   const components = {
     stopsVsNormal: { earned: stopsScore, max: w.stopsVsNormal, input: { completedStops, expectedStops, ratio: Number(stopRatio.toFixed(3)) } },
@@ -49,6 +50,12 @@ export function calculateDailyScore(inputs, weights = DEFAULT_SCORE_WEIGHTS, thr
     unnecessaryStoppages: { earned: stoppageScore, max: w.unnecessaryStoppages, input: { stoppages, allowedStoppages } },
     deviceUptime: { earned: uptimeScore, max: w.deviceUptime, input: { deviceUptimePct } },
   };
+
+  if (noGps) {
+    Object.values(components).forEach((component) => {
+      component.earned = 0;
+    });
+  }
 
   const total = Object.values(components).reduce((sum, c) => sum + c.earned, 0);
   const band = getPaymentBand(total, t);

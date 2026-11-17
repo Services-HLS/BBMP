@@ -107,13 +107,6 @@ export default function AppShell() {
         height: '100%',
         bgcolor: colors.sidebar,
         color: colors.sidebarText,
-        backgroundImage: `
-          linear-gradient(180deg, rgba(8,22,36,0.88) 0%, rgba(16,40,60,0.82) 40%, rgba(10,28,44,0.9) 100%),
-          url(/sidebar-swm.jpg)
-        `,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
-        backgroundRepeat: 'no-repeat',
       }}
     >
       <Box
@@ -228,22 +221,22 @@ export default function AppShell() {
                       setMobileOpen(false);
                     }}
                     sx={{
-                      mb: 0.25,
-                      minHeight: 40,
+                      mb: 0.35,
+                      minHeight: 42,
                       px: iconOnly ? 1 : 1.25,
                       pr: item.sidebarReveal && !iconOnly ? 0.5 : undefined,
                       justifyContent: iconOnly ? 'center' : 'flex-start',
-                      color: active ? '#FFFFFF' : colors.sidebarText,
-                      border: '1px solid transparent',
+                      color: active ? '#FFFFFF' : 'rgba(255,255,255,0.78)',
+                      borderRadius: '12px',
                       '&.Mui-selected': {
                         bgcolor: colors.sidebarActive,
                         color: '#FFFFFF',
-                        borderColor: 'rgba(76,214,138,0.35)',
-                        '& .MuiListItemIcon-root': { color: colors.leafBright },
-                        '&:hover': { bgcolor: 'rgba(45,190,106,0.36)' },
+                        boxShadow: 'inset 3px 0 0 #3DDC84',
+                        '& .MuiListItemIcon-root': { color: '#3DDC84' },
+                        '&:hover': { bgcolor: 'rgba(255,255,255,0.14)' },
                       },
                       '&:hover': {
-                        bgcolor: active ? 'rgba(45,190,106,0.36)' : colors.sidebarHover,
+                        bgcolor: active ? 'rgba(255,255,255,0.14)' : colors.sidebarHover,
                       },
                     }}
                   >

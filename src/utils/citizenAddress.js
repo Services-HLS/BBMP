@@ -18,7 +18,9 @@ export function formatHouseAddress(addr, { singleLine = false } = {}) {
   const parts = [
     [addr.houseNo, addr.street].filter(Boolean).join(', '),
     addr.area,
-    addr.landmark ? `Near ${addr.landmark}` : '',
+    addr.landmark
+      ? (/^near\b/i.test(addr.landmark) ? addr.landmark : `Near ${addr.landmark}`)
+      : '',
     [addr.city, addr.pincode].filter(Boolean).join(' — '),
   ].filter(Boolean);
   return parts.join(singleLine ? ', ' : '\n');

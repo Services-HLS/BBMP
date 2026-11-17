@@ -150,8 +150,14 @@ export default function SettingsPage() {
                       size="small"
                       disabled={r.active === false}
                       onClick={async () => {
-                        await api.deactivateMasterRecord('vehicles', r.id, user?.name);
-                        showToast('Vehicle deactivated');
+                        const reason = window.prompt('Reason for deactivating this vehicle');
+                        if (!reason?.trim()) return;
+                        try {
+                          await api.deactivateMasterRecord('vehicles', r.id, user?.name, reason.trim());
+                          showToast('Vehicle deactivated');
+                        } catch (err) {
+                          showToast(err.message, 'error');
+                        }
                       }}
                     >
                       Deactivate
@@ -176,8 +182,14 @@ export default function SettingsPage() {
                       size="small"
                       disabled={r.active === false}
                       onClick={async () => {
-                        await api.deactivateMasterRecord('wards', r.id, user?.name);
-                        showToast('Ward deactivated');
+                        const reason = window.prompt('Reason for deactivating this ward');
+                        if (!reason?.trim()) return;
+                        try {
+                          await api.deactivateMasterRecord('wards', r.id, user?.name, reason.trim());
+                          showToast('Ward deactivated');
+                        } catch (err) {
+                          showToast(err.message, 'error');
+                        }
                       }}
                     >
                       Deactivate

@@ -17,7 +17,6 @@ export default function SectionCard({
         flexDirection: 'column',
         bgcolor: 'background.paper',
         borderColor: 'divider',
-        boxShadow: '0 1px 3px rgba(16,40,60,0.05)',
         ...sx,
       }}
     >

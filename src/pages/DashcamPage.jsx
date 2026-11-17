@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert, Box, Button, Chip, Divider, Drawer, FormControl, Grid, IconButton,
   InputLabel, List, ListItem, ListItemText, MenuItem, Select, Slider, Stack,
@@ -166,7 +167,9 @@ export default function DashcamPage() {
       />
 
       <Alert severity="info" icon={false}>
-        Privacy: synthetic placeholders only — no real footage. Prototype never connects to a live camera.
+        Dashcam events are rows in the grievance register. Open them with the Dashcam filter on{' '}
+        <RouterLink to="/complaints?source=ai">Complaints</RouterLink>.
+        {' '}Synthetic placeholders only — no live camera.
         {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 

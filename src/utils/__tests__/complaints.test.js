@@ -16,7 +16,10 @@ describe('complaint seed workflow states', () => {
     const statuses = new Set(complaints.map((c) => c.status));
     expect(statuses.has('Submitted')).toBe(true);
     expect(statuses.has('Resolved')).toBe(true);
-    expect(statuses.has('Assigned') || statuses.has('In Progress')).toBe(true);
+    expect(statuses.has('Assigned')).toBe(true);
+    expect(statuses.has('On site')).toBe(true);
+    expect(complaints.find((c) => c.id === 'CMP-100003')?.wardId).toBe('ward-120');
+    expect(complaints.find((c) => c.category === 'Pothole')?.slaDeadline).toBeNull();
   });
 
   it('includes history entries for each complaint', () => {

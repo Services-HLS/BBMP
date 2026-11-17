@@ -3,6 +3,13 @@ import { loadAppData, saveAppData, clearAppData } from '../utils/storage';
 import { uid, complaintId, eventId } from '../utils/id';
 import { nowISO, todayISO } from '../utils/date';
 import { calculateDailyScore, monthlyScoreFromDaily, validateWeights } from '../utils/scoring';
+import {
+  applyHouseholdCoverage,
+  blockCoveragePercent,
+  buildIssueRegister,
+  slaDeadlineFor,
+  validateClosureProof,
+} from '../utils/issues';
 import { DEFAULT_SCORE_WEIGHTS, DEFAULT_SCORE_THRESHOLDS } from '../constants';
 
 const delay = (ms = 180) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -124,9 +131,15 @@ export async function getDashboardStats({ wardId, wardIds, corporationId, dateFi
 
   const onRoute = vehicles.filter((v) => v.status === 'On Route').length;
   const stopsCompleted = vehicles.reduce((s, v) => s + (v.completedStops || 0), 0);
-  const stopsExpected = vehicles.reduce((s, v) => s + (v.expectedStops || 0), 0);
-  const coverage = stopsExpected ? Math.round((stopsCompleted / stopsExpected) * 100) : 0;
-  const openComplaints = complaints.filter((c) => !['Resolved'].includes(c.status)).length;
+  const householdCoverage = blockCoveragePercent(
+    (wardId || corporationId) ? data.households.filter((h) => vehicles.some((v) => v.blockId === h.blockId)) : data.households,
+  );
+  const coverage = householdCoverage ?? (
+    vehicles.length
+      ? Math.round(vehicles.reduce((sum, v) => sum + (v.coveragePct || 0), 0) / vehicles.length)
+      : 0
+  );
+  const openComplaints = complaints.filter((c) => !['Resolved', 'Closed', 'Invalid'].includes(c.status)).length;
   const unresolvedAi = aiEvents.filter((e) => !['Resolved', 'False Positive'].includes(e.status)).length;
   const speedAlerts = aiEvents.filter((e) => e.type === 'Speeding' && e.status !== 'False Positive').length;
   const sweepingDone = sweeping.filter((s) => s.status === 'Completed').length;
@@ -145,12 +158,15 @@ export async function getDashboardStats({ wardId, wardIds, corporationId, dateFi
 
   const wardPerf = wardsList.map((w) => {
     const wv = vehicles.filter((v) => v.wardId === w.id);
-    const done = wv.reduce((s, v) => s + v.completedStops, 0);
-    const exp = wv.reduce((s, v) => s + v.expectedStops, 0);
+    const wardHouses = data.households.filter((h) => h.wardId === w.id);
+    const fromHouses = blockCoveragePercent(wardHouses);
+    const fromAutos = wv.length
+      ? Math.round(wv.reduce((s, v) => s + (v.coveragePct || 0), 0) / wv.length)
+      : 0;
     return {
       wardId: w.id,
       name: w.name,
-      coverage: exp ? Math.round((done / exp) * 100) : 0,
+      coverage: fromHouses ?? fromAutos,
       vehicles: wv.length,
       openComplaints: complaints.filter((c) => c.wardId === w.id && c.status !== 'Resolved').length,
     };
@@ -303,16 +319,8 @@ export async function markStopCompleted(householdId, actor = 'Supervisor') {
   hh.coverageStatus = 'Collected';
   hh.lastCollection = todayISO();
   hh.verificationMethod = 'Manual';
-  const route = memory.routes.find((r) => r.id === hh.routeId);
-  if (route) {
-    route.completedStops = Math.min(route.expectedStops, route.completedStops + 1);
-    route.householdCoverage = Math.round((route.completedStops / route.expectedStops) * 100);
-  }
-  const vehicle = memory.vehicles.find((v) => v.routeId === hh.routeId);
-  if (vehicle) {
-    vehicle.completedStops = Math.min(vehicle.expectedStops, vehicle.completedStops + 1);
-    vehicle.coveragePct = Math.round((vehicle.completedStops / vehicle.expectedStops) * 100);
-  }
+  hh.manualOverride = true;
+  applyHouseholdCoverage(memory.vehicles, memory.routes, memory.blocks, memory.households);
   pushAudit(actor, 'Mark Stop Completed', 'household', householdId, `Stop marked collected (simulated)`);
   persist();
   return hh;
@@ -323,6 +331,8 @@ export async function flagMissedPickup(householdId, actor = 'Supervisor') {
   const hh = ensure().households.find((h) => h.id === householdId);
   if (!hh) throw new Error('Household not found');
   hh.coverageStatus = 'Missed';
+  hh.manualOverride = true;
+  applyHouseholdCoverage(memory.vehicles, memory.routes, memory.blocks, memory.households);
   pushAudit(actor, 'Flag Missed Pickup', 'household', householdId, 'Missed pickup flagged');
   pushNotification({
     category: 'Low Household Coverage',
@@ -420,6 +430,19 @@ export async function markDwcException(id, reason, actor = 'Supervisor') {
 }
 
 /* ---------- Complaints ---------- */
+export async function getIssueRegister(filters = {}) {
+  await delay();
+  let list = buildIssueRegister(ensure());
+  if (filters.source) list = list.filter((issue) => issue.source === filters.source);
+  if (filters.wardId) list = list.filter((issue) => issue.wardId === filters.wardId);
+  if (filters.wardIds?.length) {
+    const set = new Set(filters.wardIds);
+    list = list.filter((issue) => set.has(issue.wardId));
+  }
+  list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  return list;
+}
+
 export async function getComplaints(filters = {}) {
   await delay();
   let list = [...ensure().complaints];
@@ -432,6 +455,7 @@ export async function getComplaints(filters = {}) {
   }
   if (filters.reporterId) list = list.filter((c) => c.reporterId === filters.reporterId);
   if (filters.assignedTo) list = list.filter((c) => c.assignedTo === filters.assignedTo);
+  if (filters.source) list = list.filter((c) => (c.source || 'complaint') === filters.source);
   if (filters.q) {
     const q = filters.q.toLowerCase();
     list = list.filter((c) =>
@@ -470,9 +494,21 @@ export async function createComplaint(payload, actor = 'Citizen') {
     assignedTo: null,
     status: 'Submitted',
     photoDataUrl: payload.photoDataUrl || null,
-    slaDeadline: new Date(Date.now() + 48 * 3600 * 1000).toISOString(),
+    source: payload.source || 'complaint',
+    dedupeKey: payload.dedupeKey || null,
+    channel: payload.channel || 'app',
+    packageId: payload.packageId || null,
+    contractorId: payload.contractorId || null,
+    buildingId: payload.buildingId || null,
+    slaDeadline: slaDeadlineFor(payload.category, new Date()),
     history: [{ at: nowISO(), action: 'Submitted', by: actor, note: payload.houseAddress ? `Submitted · ${payload.houseAddress}` : 'Complaint submitted' }],
   };
+  const block = ensure().blocks.find((b) => b.id === complaint.blockId);
+  if (block) {
+    complaint.packageId = complaint.packageId || block.packageId || null;
+    complaint.contractorId = complaint.contractorId || block.contractorId || null;
+    complaint.buildingId = complaint.buildingId || `bldg-${block.id}-1`;
+  }
   ensure().complaints.unshift(complaint);
   pushNotification({
     category: 'New Assignment',
@@ -503,18 +539,21 @@ export async function createComplaint(payload, actor = 'Citizen') {
   return complaint;
 }
 
-const PICKUP_CATEGORIES = ['Skipped Household Pickup', 'Late Auto', 'Missed Dry Waste Collection'];
+const CLOSURE_STATUSES = ['Closure submitted', 'Resolved', 'Closed'];
 
 export async function updateComplaintStatus(id, status, note, actor = 'Supervisor', evidence = null) {
   await delay();
   const c = ensure().complaints.find((x) => x.id === id);
   if (!c) throw new Error('Complaint not found');
-  if (status === 'Resolved') {
-    const needsEvidence = PICKUP_CATEGORIES.includes(c.category);
-    if (needsEvidence && !evidence && !c.resolutionEvidence) {
-      throw new Error('Resolution evidence (photo or demo evidence) is required for pickup-related complaints');
-    }
-    if (evidence) c.resolutionEvidence = evidence;
+  if (CLOSURE_STATUSES.includes(status) && status !== 'Closed') {
+    const proof = evidence && typeof evidence === 'object' ? evidence : null;
+    const check = validateClosureProof(c, proof || (c.closureProof ?? null));
+    if (!check.ok) throw new Error(check.reason);
+    if (proof) c.closureProof = proof;
+  }
+  if (status === 'Closed' && !c.closureProof && !['Pending citizen', 'Closure submitted', 'Resolved'].includes(c.status)) {
+    const check = validateClosureProof(c, null);
+    if (!check.ok) throw new Error(check.reason);
   }
   c.status = status;
   c.history.push({ at: nowISO(), action: status, by: actor, note: note || status });
@@ -585,7 +624,9 @@ export async function reopenComplaint(id, reason, actor = 'Citizen') {
   await delay();
   const c = ensure().complaints.find((x) => x.id === id);
   if (!c) throw new Error('Complaint not found');
-  if (c.status !== 'Resolved') throw new Error('Only resolved complaints can be reopened');
+  if (!['Resolved', 'Closed', 'Pending citizen'].includes(c.status)) {
+    throw new Error('Only a closed complaint can be reopened');
+  }
   c.status = 'Reopened';
   c.history.push({ at: nowISO(), action: 'Reopened', by: actor, note: reason });
   pushAudit(actor, 'Reopen Complaint', 'complaint', id, reason);
@@ -829,6 +870,24 @@ export async function submitFeedback(payload, actor = 'Citizen') {
   if (existingIdx >= 0) list[existingIdx] = fb;
   else list.unshift(fb);
   pushAudit(actor, 'Submit Feedback', 'feedback', fb.id, `Rating ${fb.rating}`);
+  if (payload.outcome === 'missed_by_auto' && payload.citizenId) {
+    const dedupeKey = `skip:${payload.citizenId}:${date}`;
+    const already = ensure().complaints.find((c) => c.dedupeKey === dedupeKey);
+    if (!already) {
+      await createComplaint({
+        category: 'Skipped Household Pickup',
+        title: 'Skipped household pickup',
+        description: payload.reason || payload.comment || 'Citizen marked the auto as missed.',
+        reporterId: payload.citizenId,
+        reporterName: actor,
+        wardId: payload.wardId,
+        blockId: payload.blockId,
+        dedupeKey,
+        channel: 'calendar',
+        priority: 'High',
+      }, actor);
+    }
+  }
   persist();
   return fb;
 }
@@ -860,12 +919,15 @@ export async function upsertMasterRecord(collection, record, actor = 'Admin') {
   return record;
 }
 
-export async function deactivateMasterRecord(collection, id, actor = 'Admin') {
+export async function deactivateMasterRecord(collection, id, actor = 'Admin', reason = '') {
   await delay();
   const item = ensure()[collection]?.find((x) => x.id === id);
   if (!item) throw new Error('Not found');
+  if (!String(reason || '').trim()) throw new Error('A reason is required to deactivate');
   item.active = false;
-  pushAudit(actor, `Deactivate ${collection}`, collection, id, 'Deactivated');
+  item.deactivatedReason = String(reason).trim();
+  item.deactivatedBy = actor;
+  pushAudit(actor, `Deactivate ${collection}`, collection, id, item.deactivatedReason);
   persist();
   return item;
 }
@@ -885,9 +947,11 @@ export async function askAssistant(question, role = 'admin', user = null) {
   if (q.includes('coverage below') || (q.includes('coverage') && q.includes('90'))) {
     let wards = data.wards.map((w) => {
       const vs = data.vehicles.filter((v) => v.wardId === w.id);
-      const done = vs.reduce((s, v) => s + v.completedStops, 0);
-      const exp = vs.reduce((s, v) => s + v.expectedStops, 0) || 1;
-      return { ward: w.name, coverage: Math.round((done / exp) * 100), vehicles: vs.length };
+      const fromHouses = blockCoveragePercent(data.households.filter((h) => h.wardId === w.id));
+      const fromAutos = vs.length
+        ? Math.round(vs.reduce((s, v) => s + (v.coveragePct || 0), 0) / vs.length)
+        : 0;
+      return { ward: w.name, coverage: fromHouses ?? fromAutos, vehicles: vs.length };
     }).filter((w) => w.coverage < 90);
     if (wardFilter) wards = wards.filter((w) => {
       const ward = data.wards.find((x) => x.name === w.ward);

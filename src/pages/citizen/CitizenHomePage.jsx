@@ -30,6 +30,7 @@ import {
   getCitizenHouseAddress,
   hasHouseAddress,
 } from '../../utils/citizenAddress';
+import { arrivalMinutes, autoPlaceLabel, citizenHousePoint, formatArrival, formatDistance, haversineKm } from '../../utils/geo';
 
 function resolveOutcome(fb) {
   if (!fb) return null;
@@ -55,6 +56,25 @@ export default function CitizenHomePage() {
     if (!user?.id) return;
     setAddress(getCitizenHouseAddress(user));
   }, [user]);
+
+  const autoStatus = useMemo(() => {
+    if (!data || !user) return null;
+    const vehicle = data.vehicles?.find((v) => v.blockId === user.blockId)
+      || data.vehicles?.find((v) => v.wardId === user.wardId)
+      || null;
+    if (!vehicle) return null;
+    const house = citizenHousePoint(data, user, getCitizenHouseAddress(user));
+    const km = haversineKm(house, vehicle);
+    const offline = vehicle.status === 'Offline';
+    return {
+      name: vehicle.displayName,
+      autoId: vehicle.autoId,
+      offline,
+      distance: formatDistance(km),
+      eta: offline ? null : formatArrival(arrivalMinutes(km, vehicle.speed)),
+      place: autoPlaceLabel(data, vehicle),
+    };
+  }, [data, user]);
 
   const monthSummary = useMemo(() => {
     const stats = { collected: 0, missed_by_auto: 0, garbage_not_kept: 0 };
@@ -99,6 +119,30 @@ export default function CitizenHomePage() {
       />
 
       <Alert severity="info" icon={false}>{t('demoNotice')}</Alert>
+
+      {autoStatus && (
+        <SectionCard
+          title="Where is your auto"
+          action={(
+            <Button size="small" variant="contained" onClick={() => navigate('/citizen/track')}>
+              {t('trackMyAuto')}
+            </Button>
+          )}
+        >
+          <Stack spacing={0.5}>
+            <Typography sx={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+              {autoStatus.offline ? 'Auto is offline' : (autoStatus.eta ? `Arriving in ${autoStatus.eta}` : 'Time not available')}
+            </Typography>
+            <Typography variant="body2" fontWeight={600}>
+              {autoStatus.distance ? `${autoStatus.distance} away` : 'Distance not available'}
+              {` · ${autoStatus.name}`}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {autoStatus.place ? `Now ${autoStatus.place}.` : autoStatus.autoId}
+            </Typography>
+          </Stack>
+        </SectionCard>
+      )}
 
       <SectionCard
         title={t('myHouseAddress')}

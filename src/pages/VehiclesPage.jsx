@@ -10,7 +10,7 @@ import FilterBar from '../components/common/FilterBar';
 import DataTable from '../components/common/DataTable';
 import StatusChip from '../components/common/StatusChip';
 import LoadingState from '../components/common/LoadingState';
-import MapView from '../components/maps/MapView';
+import MapView, { HouseSatelliteDialog, housesForAuto } from '../components/maps/MapView';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
@@ -27,6 +27,7 @@ export default function VehiclesPage() {
   const [status, setStatus] = useState('');
   const [view, setView] = useState('map');
   const [selected, setSelected] = useState(null);
+  const [satelliteVehicle, setSatelliteVehicle] = useState(null);
   const [focus, setFocus] = useState(null);
 
   const scopedWards = useMemo(() => scopeWards(data?.wards || []), [data?.wards, scopeWards]);
@@ -62,7 +63,7 @@ export default function VehiclesPage() {
         breadcrumbs={[{ label: 'Home', to: '/dashboard' }, { label: 'Vehicles' }]}
       />
       <Alert severity="info" icon={false}>
-        Markers use illustrative Bengaluru coordinates — not operational positions.
+        Choose a ward, for example Ward 112 — Indiranagar. The map shows the autos in that area. Click an auto to open the satellite view of the house numbers.
         {isScoped ? ` · ${scopeLabel}` : ' · Admin: all wards'}
       </Alert>
 
@@ -76,7 +77,17 @@ export default function VehiclesPage() {
       >
         <FormControl size="small">
           <InputLabel>Ward</InputLabel>
-          <Select label="Ward" value={wardId} onChange={(e) => setWardId(e.target.value)}>
+          <Select
+            label="Ward"
+            value={wardId}
+            onChange={(e) => {
+              const id = e.target.value;
+              setWardId(id);
+              setSatelliteVehicle(null);
+              const ward = scopedWards.find((w) => w.id === id);
+              setFocus(ward ? [ward.lat, ward.lng] : null);
+            }}
+          >
             <MenuItem value="">All</MenuItem>
             {scopedWards.map((w) => <MenuItem key={w.id} value={w.id}>{w.name}</MenuItem>)}
           </Select>
@@ -95,7 +106,15 @@ export default function VehiclesPage() {
           height={440}
           markers={markers}
           focus={focus}
-          onMarkerClick={(m) => setSelected(vehicles.find((v) => v.id === m.id))}
+          zoom={wardId ? 15 : 12}
+          caption={wardId
+            ? 'Autos in the selected ward. Click a marker for the satellite house numbers.'
+            : 'Select a ward to zoom to that area.'}
+          onMarkerClick={(m) => {
+            const vehicle = vehicles.find((v) => v.id === m.id);
+            setSelected(vehicle || null);
+            setSatelliteVehicle(vehicle || null);
+          }}
         />
       ) : (
         <DataTable columns={columns} rows={vehicles} onRowClick={setSelected} searchPlaceholder="Search auto / driver…" />
@@ -145,6 +164,9 @@ export default function VehiclesPage() {
               <Button variant="outlined" onClick={() => { setFocus([selected.lat, selected.lng]); setView('map'); showToast('Map focused on vehicle'); }}>
                 Focus map
               </Button>
+              <Button variant="outlined" onClick={() => setSatelliteVehicle(selected)}>
+                Satellite houses
+              </Button>
               <Button
                 variant="contained"
                 startIcon={<RefreshCw size={16} />}
@@ -160,6 +182,14 @@ export default function VehiclesPage() {
           </Box>
         )}
       </Drawer>
+
+      <HouseSatelliteDialog
+        vehicle={satelliteVehicle}
+        houses={housesForAuto(data, satelliteVehicle)}
+        wardName={scopedWards.find((w) => w.id === satelliteVehicle?.wardId)?.name}
+        blockCode={data.blocks?.find((b) => b.id === satelliteVehicle?.blockId)?.code}
+        onClose={() => setSatelliteVehicle(null)}
+      />
     </PageContainer>
   );
 }

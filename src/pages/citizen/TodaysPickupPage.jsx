@@ -135,7 +135,7 @@ export default function TodaysPickupPage() {
       </SectionCard>
 
       {vehicle && (
-        <SectionCard title={vehicle.displayName} subtitle={`${vehicle.autoId} · ${vehicle.driverName || 'Driver'}`}>
+        <SectionCard title={vehicle.displayName} subtitle={vehicle.autoId}>
           <Stack
             direction="row"
             justifyContent="space-between"
